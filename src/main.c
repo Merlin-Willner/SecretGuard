@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "include/cli.h"
+#include "cli.h"
 
 int main(int argc, char **argv) {
     Config config;

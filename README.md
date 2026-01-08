@@ -1,19 +1,17 @@
-# SecretGuard (Increment 1)
+# SecretGuard
 
 This project only parses input flags and prints what it understood.
 It does not scan files yet.
 
 ## Build
 
-You need a C compiler (gcc or clang).
+You need a C compiler (gcc).
 
-With Makefile:
+Targets:
 
-  make
-
-Without Makefile:
-
-  gcc -Iinclude -Wall -Wextra -O2 main.c cli.c -o secretguard
+  make        # builds the secretguard binary (default target)
+  make run    # runs the application with path examples/demo_repo
+  make clean  # removes build/ and secretguard binary
 
 ## Run
 
