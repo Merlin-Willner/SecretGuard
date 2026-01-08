@@ -9,9 +9,12 @@ You need a C compiler (gcc).
 
 Targets:
 
-  make        # builds the secretguard binary (default target)
-  make run    # runs the application with path examples/demo_repo
-  make clean  # removes build/ and secretguard binary
+- `make`
+  Builds the `secretguard` binary (default target).
+- `make run`
+  Runs the application with path `examples/demo_repo`.
+- `make clean`
+  Removes `build/` and the `secretguard` binary.
 
 ## Run
 
