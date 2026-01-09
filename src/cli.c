@@ -17,25 +17,6 @@ static char *duplicate_string(const char *text) {
     return copy;
 }
 
-// Set default values.
-void init_config(Config *config) {
-    if (!config) {
-        return;
-    }
-    config->root_path = NULL;
-    config->max_depth = DEFAULT_MAX_DEPTH;
-    config->stdin_mode = false;
-}
-
-// Free memory owned by the config.
-void free_config(Config *config) {
-    if (!config) {
-        return;
-    }
-    free(config->root_path);
-    config->root_path = NULL;
-}
-
 // Parse a full integer (no extra characters).
 static int parse_int(const char *text, int *out_value) {
     if (!text || !out_value) {
