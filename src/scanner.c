@@ -13,29 +13,163 @@ runs the regex rules on each line, and prints findings when a match is found */
 
  */
 
- #include "scanner.h"
+#include "scanner.h"
+#include <errno.h>
+#include <fcntl.h>   /* POSIX open for file descriptors */
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>  /* POSIX read/close for streaming file data */
 
-/* Initialize the scanner context with a rules engine. */
+#include "config.h"
+#include "util.h"
+
+/* Buffer size for reading files or lines */
+#define SCAN_BUFFER_SIZE 8192
+
+/* Structure to hold context information for a single line,
+   passed to the callback function */
+typedef struct {
+    ScannerContext *scanner;
+    const char *path;
+    size_t line_number;  
+} LineContext;
+
+
+
+/* Initialize the scanner with a rules engine, which defines
+   patterns that indicate "sensitive information". */
 void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
-    if (!scanner) return;
     scanner->rules = rules;
-    scanner->finding_count = 0;
-
-    // TODO: Add scanning logic in the next commit
+    scanner->finding_count = 0; /* Reset number of findings */
 }
 
-/* Stub function: scan file path (implementation will follow in next commit) */
+
+/* Print a single finding to stdout */
+static void print_finding(const char *rule_name,
+                          const char *path,
+                          size_t line_number,
+                          size_t column) {
+    printf("FOUND %s at %s:%zu:%zu\n", rule_name, path, line_number, column);
+}
+
+/* Callback function called by the rules engine when a match is found */
+static void match_callback(const char *rule_name,
+                           size_t start,
+                           size_t end,
+                           void *user_data) {
+    (void)end;
+    LineContext *line_context = (LineContext *)user_data;
+    size_t column = start + 1;
+    print_finding(rule_name, line_context->path, line_context->line_number, column);
+    line_context->scanner->finding_count++;
+}
+
+/* Scan a single line for sensitive information */
+static void scan_line(ScannerContext *scanner,
+                      const char *path,
+                      const char *line,
+                      size_t length,
+                      size_t line_number) {
+    LineContext line_context;
+    line_context.scanner = scanner;
+    line_context.path = path;
+    line_context.line_number = line_number;
+
+    /* Execute the rules engine on this line */
+    rules_scan_line(scanner->rules, line, length, match_callback, &line_context);
+}
+
+/* Scan an open file descriptor for secrets. */
+static int scan_file_descriptor(ScannerContext *scanner,
+                                const char *path,
+                                int file_descriptor) {
+    char buffer[SCAN_BUFFER_SIZE];
+    char *line_buffer = NULL;
+    size_t line_capacity = 0;
+    size_t line_length = 0;
+    size_t line_number = 1;
+    int result = 0;
+    bool checked_binary = false;
+
+    ssize_t bytes_read = 0;
+    while ((bytes_read = read(file_descriptor, buffer, sizeof(buffer))) > 0) {
+        if (!checked_binary) {
+            checked_binary = true;
+            if (is_binary_buffer((const unsigned char *)buffer, (size_t)bytes_read)) {
+                result = 0;
+                goto cleanup;
+            }
+        }
+
+        for (ssize_t i = 0; i < bytes_read; ++i) {
+            char current = buffer[i];
+            if (line_length + 2 > line_capacity) {
+                size_t new_capacity = line_capacity ? line_capacity * 2 : 256;
+                while (new_capacity < line_length + 2) {
+                    new_capacity *= 2;
+                }
+                char *resized = realloc(line_buffer, new_capacity);
+                if (!resized) {
+                    result = -1;
+                    goto cleanup;
+                }
+                line_buffer = resized;
+                line_capacity = new_capacity;
+            }
+
+            /* Detect end of line */
+            if (current == '\n') {
+                if (line_length > 0 && line_buffer[line_length - 1] == '\r') {
+                    line_length--;
+                }
+                line_buffer[line_length] = '\0';
+                scan_line(scanner, path, line_buffer, line_length, line_number);
+                line_length = 0;
+                line_number++;
+            } else {
+                line_buffer[line_length] = current;
+                line_length++;
+            }
+        }
+    }
+
+    if (bytes_read < 0) {
+        fprintf(stderr, "Read error on %s: %s\n", path, strerror(errno));
+        result = -1;
+    }
+
+    /* Check the last line if the file doesn't end with \n */
+    if (line_length > 0) {
+        line_buffer[line_length] = '\0';
+        scan_line(scanner, path, line_buffer, line_length, line_number);
+    }
+
+cleanup:
+    free(line_buffer);
+    return result;
+}
+
+
+/* Scan a file path for secret patterns. */
 int scanner_scan_path(ScannerContext *scanner, const char *path) {
-    (void)scanner;
-    (void)path;
-    // First stage: no scanning yet
-    return 0;
+    if (!scanner || !path) return -1;
+
+    int file_descriptor = open(path, O_RDONLY);
+    if (file_descriptor < 0) {
+        fprintf(stderr, "Failed to open %s: %s\n", path, strerror(errno));
+        return -1;
+    }
+
+    int result = scan_file_descriptor(scanner, path, file_descriptor);
+    close(file_descriptor);
+    return result;
 }
 
-/* Stub function: scan stdin (implementation will follow in next commit) */
+/* Scan standard input for secret patterns. */
 int scanner_scan_stdin(ScannerContext *scanner) {
-    (void)scanner;
-    // First stage: no scanning yet
-    return 0;
+    if (!scanner) return -1;
+
+    return scan_file_descriptor(scanner, DEFAULT_STDIN_LABEL, STDIN_FILENO);
 }
