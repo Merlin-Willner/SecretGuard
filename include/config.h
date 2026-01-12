@@ -16,4 +16,7 @@ typedef struct {
 void init_config(Config *config);
 void free_config(Config *config);
 
+/* Friendly label used when scanning standard input. */
+#define DEFAULT_STDIN_LABEL "stdin"
+
 #endif /* CONFIG_H */

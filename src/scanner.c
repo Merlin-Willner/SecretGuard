@@ -36,7 +36,25 @@ typedef struct {
     size_t line_number;  
 } LineContext;
 
+/* Check whether a buffer looks like binary data. */
+bool is_binary_buffer(const unsigned char *buffer, size_t length) {
+    if (!buffer || length == 0) {
+        return false;
+    }
 
+    size_t non_printable = 0;
+    for (size_t i = 0; i < length; ++i) {
+        unsigned char current = buffer[i];
+        if (current == '\0') {
+            return true;
+        }
+        if (current < 0x09 || (current > 0x0D && current < 0x20)) {
+            non_printable++;
+        }
+    }
+
+    return (double)non_printable / (double)length > 0.3;
+}
 
 /* Initialize the scanner with a rules engine, which defines
    patterns that indicate "sensitive information". */
