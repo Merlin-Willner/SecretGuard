@@ -23,7 +23,6 @@ runs the regex rules on each line, and prints findings when a match is found */
 #include <unistd.h>  /* POSIX read/close for streaming file data */
 
 #include "config.h"
-#include "util.h"
 
 /* Buffer size for reading files or lines */
 #define SCAN_BUFFER_SIZE 8192

@@ -1,17 +1,29 @@
 #include <stdio.h>
 
 #include "cli.h"
+#include "rules.h"
+#include "scanner.h"
+#include "walk.h"
+
+/* Callback passed to the directory walker: scans a single file path. */
+static int scan_file_callback(const char *path, void *user_data) {
+    ScannerContext *scanner = (ScannerContext *)user_data;
+    int res = scanner_scan_path(scanner, path);
+    if (res != 0) {
+        /* Log and continue walking; do not abort the whole traversal. */
+        return 0;
+    }
+    return 0;
+}
 
 int main(int argc, char **argv) {
     Config config;
     init_config(&config);
 
     printf("== SecretGuard ==\n");
-    printf("We only parse input flags for now \n\n");
 
     int parse_result = parse_arguments(argc, argv, &config);
     if (parse_result == 1) {
-        /* Help or version was shown; nothing else to do. */
         free_config(&config);
         return 0;
     }
@@ -23,13 +35,38 @@ int main(int argc, char **argv) {
 
     print_config(&config);
 
-    /* This is where the scanner will run in later increments.
-       For now we just confirm that the CLI parsing works. */
-    printf("Scanner not implemented yet. This step is only about inputs.\n");
+    /* Initialize rules engine and scanner. */
+    RulesEngine rules;
+    if (rules_init(&rules) != 0) {
+        fprintf(stderr, "Failed to initialize rules engine.\n");
+        free_config(&config);
+        return 1;
+    }
 
-    // Uncomment to check that the program reaches this point:
-    // printf("[debug] Ready to start scanning in the next increment.\\n");
+    ScannerContext scanner;
+    scanner_init(&scanner, &rules);
 
+    int exit_code = 0;
+
+    if (config.stdin_mode) {
+        /* Scan from standard input. */
+        if (scanner_scan_stdin(&scanner) != 0) {
+            fprintf(stderr, "Scanning stdin failed.\n");
+            exit_code = 1;
+        }
+    } else {
+        /* Recursively walk the root path and scan files. */
+        int walk_result = walk_path(&config, scan_file_callback, &scanner);
+        if (walk_result != 0) {
+            fprintf(stderr, "Walking path failed.\n");
+            exit_code = 1;
+        }
+    }
+
+    /* Summary of findings. */
+    printf("\nScan complete. Findings: %zu\n", scanner.finding_count);
+
+    rules_destroy(&rules);
     free_config(&config);
-    return 0;
+    return exit_code;
 }
