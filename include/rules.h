@@ -5,7 +5,14 @@
 
 typedef struct RulesEngine RulesEngine;
 
+typedef enum {
+    SEVERITY_LOW = 0,
+    SEVERITY_MEDIUM,
+    SEVERITY_HIGH
+} severity_t;
+
 typedef void (*rules_match_callback)(const char *rule_name,
+                                     severity_t severity,
                                      size_t start,
                                      size_t end,
                                      void *user_data);
