@@ -1,0 +1,3 @@
+# Top-level config
+secret = top-level-secret       
+client_secret: top-level-client-secret

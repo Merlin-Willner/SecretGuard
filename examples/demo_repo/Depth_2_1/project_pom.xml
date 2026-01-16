@@ -1,0 +1,4 @@
+<project>
+  <stripe>sk_live_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ</stripe>
+  <sendgrid>SG.ABCDEFGHIJ12345.KLMNOPQRST67890</sendgrid>
+</project>

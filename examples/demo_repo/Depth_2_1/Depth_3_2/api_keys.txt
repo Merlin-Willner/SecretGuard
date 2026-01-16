@@ -1,0 +1,2 @@
+secret = app-secret-demo
+smtp_password: mailpass-demo
