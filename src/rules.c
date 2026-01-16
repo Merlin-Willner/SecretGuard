@@ -22,13 +22,13 @@ typedef struct {
 } RulesImpl;
 
 static const RegexRule DEFAULT_RULES[] = {
-    {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_SECRET_KV", SEVERITY_HIGH, "secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_TOKEN_KV", SEVERITY_HIGH, "(access|refresh|id)?_?token[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_TOKEN_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])(access|refresh|id)?_?token[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_BEARER", SEVERITY_HIGH, "bearer[[:space:]]+[A-Za-z0-9._-]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_AUTH_KV", SEVERITY_MEDIUM, "auth(entication|orization)?[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_CLIENT_SECRET_KV", SEVERITY_HIGH, "client[_-]?secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_AUTH_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])auth(entication|orization)?[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_CLIENT_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])client[_-]?secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_PRIVATE_KEY_PEM", SEVERITY_HIGH, "-----BEGIN[[:space:]]+(RSA|EC|DSA|OPENSSH)?[[:space:]]*PRIVATE[[:space:]]+KEY-----", REG_ICASE | REG_EXTENDED, {0}, false},
 
     {"GOOGLE_API_KEY", SEVERITY_HIGH, "AIza[0-9A-Za-z_-]{35}", REG_ICASE | REG_EXTENDED, {0}, false},
@@ -45,9 +45,9 @@ static const RegexRule DEFAULT_RULES[] = {
     {"FIREBASE_STORAGE_BUCKET", SEVERITY_LOW, "storage[_-]?bucket[[:space:]]*[:=][[:space:]]*[A-Za-z0-9._-]+\\.appspot\\.com", REG_ICASE | REG_EXTENDED, {0}, false},
     {"FIREBASE_MEASUREMENT_ID", SEVERITY_LOW, "measurement[_-]?id[[:space:]]*[:=][[:space:]]*G-[A-Za-z0-9]+", REG_ICASE | REG_EXTENDED, {0}, false},
 
-    {"GOOGLE_ANALYTICS_ID", SEVERITY_LOW, "(UA-[0-9]{4,}-[0-9]+|G-[A-Za-z0-9]+)", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GOOGLE_ANALYTICS_ID", SEVERITY_LOW, "analytics[_-]?id[[:space:]]*[:=][[:space:]]*(UA-[0-9]{4,}-[0-9]+|G-[A-Za-z0-9]+)", REG_ICASE | REG_EXTENDED, {0}, false},
 
-    {"GITHUB_TOKEN", SEVERITY_HIGH, "gh[opusr]_[A-Za-z0-9]{36,}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GITHUB_TOKEN", SEVERITY_HIGH, "gh[ousr]_[A-Za-z0-9]{36,}", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GITHUB_CLASSIC_TOKEN", SEVERITY_HIGH, "ghp_[A-Za-z0-9]{36,}", REG_ICASE | REG_EXTENDED, {0}, false},
 
     {"GITLAB_TOKEN", SEVERITY_HIGH, "glpat-[A-Za-z0-9_-]{20,}", REG_ICASE | REG_EXTENDED, {0}, false},
@@ -56,10 +56,17 @@ static const RegexRule DEFAULT_RULES[] = {
 
     {"JWT_TOKEN", SEVERITY_MEDIUM, "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9._-]+\\.[A-Za-z0-9._-]+", REG_ICASE | REG_EXTENDED, {0}, false},
 
+    {"WEBHOOK_URL", SEVERITY_MEDIUM, "https?://[^[:space:]]*webhook[^[:space:]]*", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"STRIPE_SECRET_KEY", SEVERITY_HIGH, "sk_live_[A-Za-z0-9]{24,}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"SENDGRID_API_KEY", SEVERITY_HIGH, "SG\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"TWILIO_ACCOUNT_SID", SEVERITY_MEDIUM, "AC[a-f0-9]{32}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"TWILIO_AUTH_TOKEN_KV", SEVERITY_HIGH, "twilio[_-]?auth[_-]?token[[:space:]]*[:=][[:space:]]*[A-Za-z0-9]{32}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"SMTP_PASSWORD_KV", SEVERITY_MEDIUM, "smtp[_-]?password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+
     {"AWS_ACCESS_KEY_ID", SEVERITY_HIGH, "AKIA[0-9A-Z]{16}", REG_ICASE | REG_EXTENDED, {0}, false},
     {"AWS_SECRET_ACCESS_KEY_KV", SEVERITY_HIGH, "aws[_-]?secret[_-]?access[_-]?key[[:space:]]*[:=][[:space:]]*[A-Za-z0-9/+=]{40}", REG_ICASE | REG_EXTENDED, {0}, false},
 
-    {"DATABASE_URL_KV", SEVERITY_MEDIUM, "(database|db)[_-]?url[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"DATABASE_URL_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])(database|db)[_-]?url[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"JDBC_URL", SEVERITY_MEDIUM, "jdbc:[A-Za-z0-9]+:[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false}
 };
 
