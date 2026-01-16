@@ -10,6 +10,7 @@ void init_config(Config *config) {
     config->root_path = NULL;
     config->max_depth = DEFAULT_MAX_DEPTH;
     config->stdin_mode = false;
+    config->json_output = false;
 }
 
 // Free memory owned by the config.

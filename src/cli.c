@@ -65,6 +65,8 @@ int parse_arguments(int argc, char **argv, Config *config) {
             }
         } else if (strcmp(arg, "--stdin") == 0) {
             config->stdin_mode = true;
+        } else if (strcmp(arg, "--json") == 0) {
+            config->json_output = true;
         } else if (arg[0] == '-') {
             fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
@@ -85,10 +87,13 @@ int parse_arguments(int argc, char **argv, Config *config) {
         i++;
     }
 
-    // Need either a path or stdin.
+    // Default to current directory when no path or stdin is provided.
     if (!config->root_path && !config->stdin_mode) {
-        fprintf(stderr, "ERROR: provide a path or --stdin so we have input to scan.\n");
-        return 2;
+        config->root_path = duplicate_string(".");
+        if (!config->root_path) {
+            fprintf(stderr, "ERROR: could not set default path.\n");
+            return 2;
+        }
     }
 
     return 0;
@@ -96,17 +101,30 @@ int parse_arguments(int argc, char **argv, Config *config) {
 
 // Print the final config.
 void print_config(const Config *config) {
-    const char *root_path = config->root_path ? config->root_path : "(stdin)";
-    const char *mode_label = config->stdin_mode ? "stdin" : "filesystem";
+    if (config->json_output) {
+        return;
+    }
+    const char *root_path = config->root_path ? config->root_path : ".";
+    const char *mode_label = config->stdin_mode ? "STDIN" : "filesystem";
+    const char *target_label = root_path;
+    if (config->stdin_mode) {
+        target_label = "STDIN";
+    } else if (strcmp(root_path, ".") == 0) {
+        target_label = "Current Directory";
+    }
     char depth_label[32];
     if (config->max_depth < 0) {
         snprintf(depth_label, sizeof(depth_label), "unlimited");
     } else {
         snprintf(depth_label, sizeof(depth_label), "%d", config->max_depth);
     }
-    printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
-           APP_NAME, APP_VERSION, mode_label, depth_label);
-    printf("Target:  %s\n", root_path);
+    if (config->stdin_mode) {
+        printf("%s v%s  \u2022  mode: %s\n", APP_NAME, APP_VERSION, mode_label);
+    } else {
+        printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
+               APP_NAME, APP_VERSION, mode_label, depth_label);
+    }
+    printf("Target:  %s\n", target_label);
 }
 
 // Show usage info.
@@ -117,5 +135,6 @@ void print_help(const char *program_name) {
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
     printf("      --stdin        Read from STDIN instead of a file path\n");
+    printf("      --json         Output results as JSON\n");
     printf("\nNote: Provide either a path or --stdin.\n");
 }
