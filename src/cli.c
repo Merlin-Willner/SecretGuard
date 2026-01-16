@@ -48,39 +48,36 @@ int parse_arguments(int argc, char **argv, Config *config) {
             const char *value = NULL;
             if (strcmp(arg, "--max-depth") == 0) {
                 if (i + 1 >= argc) {
-                    fprintf(stderr, "Invalid --max-depth value: (missing)\n");
+                    fprintf(stderr, "ERROR: --max-depth requires a value.\n");
                     return 2;
                 }
                 value = argv[++i];
             } else if (arg[11] == '=') {
                 value = arg + 12;
             } else {
-                fprintf(stderr, "Invalid --max-depth usage: %s\n", arg);
+                fprintf(stderr, "ERROR: invalid --max-depth usage: %s\n", arg);
                 return 2;
             }
 
             if (parse_int(value, &config->max_depth) != 0) {
-                fprintf(stderr, "Invalid --max-depth value: %s\n", value ? value : "(null)");
+                fprintf(stderr, "ERROR: invalid --max-depth value: %s\n", value ? value : "(null)");
                 return 2;
             }
-            printf("Max depth set to %d\n", config->max_depth);
         } else if (strcmp(arg, "--stdin") == 0) {
             config->stdin_mode = true;
-            printf("Reading from stdin instead of a path\n");
         } else if (arg[0] == '-') {
-            fprintf(stderr, "Unknown flag. Use --help to see valid options.\n");
+            fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
         } else {
             // Only one path is allowed.
             if (!config->root_path) {
                 config->root_path = duplicate_string(arg);
                 if (!config->root_path) {
-                    fprintf(stderr, "Could not copy path argument\n");
+                    fprintf(stderr, "ERROR: could not copy path argument.\n");
                     return 2;
                 }
-                printf("Root path set to: %s\n", config->root_path);
             } else {
-                fprintf(stderr, "Extra argument detected: %s\n", arg);
+                fprintf(stderr, "ERROR: extra argument: %s\n", arg);
                 return 2;
             }
         }
@@ -90,7 +87,7 @@ int parse_arguments(int argc, char **argv, Config *config) {
 
     // Need either a path or stdin.
     if (!config->root_path && !config->stdin_mode) {
-        fprintf(stderr, "Please provide a path or --stdin so we have input to scan.\n");
+        fprintf(stderr, "ERROR: provide a path or --stdin so we have input to scan.\n");
         return 2;
     }
 
@@ -99,17 +96,22 @@ int parse_arguments(int argc, char **argv, Config *config) {
 
 // Print the final config.
 void print_config(const Config *config) {
-    printf("\n--- Current configuration ---\n");
-    printf("Program : %s %s\n", APP_NAME, APP_VERSION);
-    printf("Root path: %s\n", config->root_path ? config->root_path : "(none, stdin only)");
-    printf("Max depth: %d\n", config->max_depth);
-    printf("Use stdin : %s\n", config->stdin_mode ? "yes" : "no");
-    printf("-----------------------------\n\n");
+    const char *root_path = config->root_path ? config->root_path : "(stdin)";
+    const char *mode_label = config->stdin_mode ? "stdin" : "filesystem";
+    char depth_label[32];
+    if (config->max_depth < 0) {
+        snprintf(depth_label, sizeof(depth_label), "unlimited");
+    } else {
+        snprintf(depth_label, sizeof(depth_label), "%d", config->max_depth);
+    }
+    printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
+           APP_NAME, APP_VERSION, mode_label, depth_label);
+    printf("Target:  %s\n", root_path);
 }
 
 // Show usage info.
 void print_help(const char *program_name) {
-    printf("%s - Increment 1: basic main and flags\n", APP_NAME);
+    printf("%s %s\n", APP_NAME, APP_VERSION);
     printf("Usage: %s [OPTIONS] <path>\n", program_name);
     printf("Options:\n");
     printf("  -h, --help         Show this help text\n");

@@ -1,7 +1,7 @@
 
 
 /* Reads every file or standard in stdin line by line
-runs the regex rules on each line, and prints findings when a match is found */
+runs the regex rules on each line, and stores findings for later reporting. */
 
 
 
@@ -26,6 +26,15 @@ runs the regex rules on each line, and prints findings when a match is found */
 
 /* Buffer size for reading files or lines */
 #define SCAN_BUFFER_SIZE 8192
+
+typedef struct ScannerFindingNode {
+    char *rule_name;
+    severity_t severity;
+    char *path;
+    size_t line_number;
+    size_t column;
+    struct ScannerFindingNode *next;
+} ScannerFindingNode;
 
 /* Structure to hold context information for a single line,
    passed to the callback function */
@@ -60,6 +69,64 @@ bool is_binary_buffer(const unsigned char *buffer, size_t length) {
 void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
     scanner->rules = rules;
     scanner->finding_count = 0; /* Reset number of findings */
+    scanner->highest_severity = SEVERITY_LOW;
+    scanner->findings_head = NULL;
+    scanner->findings_tail = NULL;
+}
+
+static char *duplicate_string(const char *text) {
+    if (!text) {
+        return NULL;
+    }
+    size_t length = strlen(text) + 1;
+    char *copy = malloc(length);
+    if (copy) {
+        memcpy(copy, text, length);
+    }
+    return copy;
+}
+
+static int append_finding(ScannerContext *scanner,
+                          const char *rule_name,
+                          severity_t severity,
+                          const char *path,
+                          size_t line_number,
+                          size_t column) {
+    if (!scanner) {
+        return -1;
+    }
+
+    ScannerFindingNode *node = calloc(1, sizeof(*node));
+    if (!node) {
+        return -1;
+    }
+
+    node->rule_name = duplicate_string(rule_name);
+    node->path = duplicate_string(path);
+    if (!node->rule_name || !node->path) {
+        free(node->rule_name);
+        free(node->path);
+        free(node);
+        return -1;
+    }
+
+    node->severity = severity;
+    node->line_number = line_number;
+    node->column = column;
+
+    if (scanner->findings_tail) {
+        scanner->findings_tail->next = node;
+    } else {
+        scanner->findings_head = node;
+    }
+    scanner->findings_tail = node;
+
+    scanner->finding_count++;
+    if (severity > scanner->highest_severity) {
+        scanner->highest_severity = severity;
+    }
+
+    return 0;
 }
 
 
@@ -96,8 +163,67 @@ static void print_finding(const char *rule_name,
     const char *color = severity_color(severity);
     const char *label = severity_label(severity);
     const char *reset = "\x1b[0m";
-    printf("%s[%s]%s %s at %s:%zu:%zu\n",
+    printf("  %s[%s]%s %-20s  %s:%zu:%zu\n",
            color, label, reset, rule_name, path, line_number, column);
+}
+
+void scanner_print_report(const ScannerContext *scanner) {
+    if (!scanner) {
+        return;
+    }
+
+    const char *status = "OK";
+    const char *status_icon = "\u2713";
+    const char *status_color = "\x1b[32m";
+    const char *status_reset = "\x1b[0m";
+    if (scanner->finding_count > 0) {
+        if (scanner->highest_severity == SEVERITY_HIGH) {
+            status = "ERROR";
+            status_icon = "\u2716";
+            status_color = "\x1b[31m";
+        } else {
+            status = "WARN";
+            status_icon = "\u26a0";
+            status_color = "\x1b[33m";
+        }
+    }
+
+    printf("Summary: %s%s %s%s - %zu findings\n",
+           status_color, status_icon, status, status_reset, scanner->finding_count);
+    printf("Results:\n");
+    if (scanner->finding_count == 0) {
+        printf("  (no findings)\n");
+    } else {
+        const ScannerFindingNode *current = scanner->findings_head;
+        while (current) {
+            print_finding(current->rule_name,
+                          current->severity,
+                          current->path,
+                          current->line_number,
+                          current->column);
+            current = current->next;
+        }
+    }
+}
+
+void scanner_destroy(ScannerContext *scanner) {
+    if (!scanner) {
+        return;
+    }
+
+    ScannerFindingNode *current = scanner->findings_head;
+    while (current) {
+        ScannerFindingNode *next = current->next;
+        free(current->rule_name);
+        free(current->path);
+        free(current);
+        current = next;
+    }
+
+    scanner->findings_head = NULL;
+    scanner->findings_tail = NULL;
+    scanner->finding_count = 0;
+    scanner->highest_severity = SEVERITY_LOW;
 }
 
 /* Callback function called by the rules engine when a match is found */
@@ -109,8 +235,14 @@ static void match_callback(const char *rule_name,
     (void)end;
     LineContext *line_context = (LineContext *)user_data;
     size_t column = start + 1;
-    print_finding(rule_name, severity, line_context->path, line_context->line_number, column);
-    line_context->scanner->finding_count++;
+    if (append_finding(line_context->scanner,
+                       rule_name,
+                       severity,
+                       line_context->path,
+                       line_context->line_number,
+                       column) != 0) {
+        fprintf(stderr, "ERROR: out of memory while storing findings.\n");
+    }
 }
 
 /* Scan a single line for sensitive information */
@@ -183,7 +315,7 @@ static int scan_file_descriptor(ScannerContext *scanner,
     }
 
     if (bytes_read < 0) {
-        fprintf(stderr, "Read error on %s: %s\n", path, strerror(errno));
+        fprintf(stderr, "ERROR: read failed on %s: %s\n", path, strerror(errno));
         result = -1;
     }
 
@@ -205,7 +337,7 @@ int scanner_scan_path(ScannerContext *scanner, const char *path) {
 
     int file_descriptor = open(path, O_RDONLY);
     if (file_descriptor < 0) {
-        fprintf(stderr, "Failed to open %s: %s\n", path, strerror(errno));
+        fprintf(stderr, "ERROR: failed to open %s: %s\n", path, strerror(errno));
         return -1;
     }
 
