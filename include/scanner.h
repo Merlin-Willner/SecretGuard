@@ -33,6 +33,9 @@ void scanner_init(ScannerContext *scanner, RulesEngine *rules);
 /* Print summary and results after scanning. */
 void scanner_print_report(const ScannerContext *scanner);
 
+/* Print JSON summary and results after scanning. */
+void scanner_print_report_json(const ScannerContext *scanner);
+
 /* Release memory allocated for stored findings. */
 void scanner_destroy(ScannerContext *scanner);
 

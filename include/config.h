@@ -11,6 +11,7 @@ typedef struct {
     char *root_path;
     int max_depth;
     bool stdin_mode;
+    bool json_output;
 } Config;
 
 void init_config(Config *config);

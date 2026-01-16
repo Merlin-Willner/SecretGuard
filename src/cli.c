@@ -65,6 +65,8 @@ int parse_arguments(int argc, char **argv, Config *config) {
             }
         } else if (strcmp(arg, "--stdin") == 0) {
             config->stdin_mode = true;
+        } else if (strcmp(arg, "--json") == 0) {
+            config->json_output = true;
         } else if (arg[0] == '-') {
             fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
@@ -96,6 +98,9 @@ int parse_arguments(int argc, char **argv, Config *config) {
 
 // Print the final config.
 void print_config(const Config *config) {
+    if (config->json_output) {
+        return;
+    }
     const char *root_path = config->root_path ? config->root_path : "(stdin)";
     const char *mode_label = config->stdin_mode ? "stdin" : "filesystem";
     char depth_label[32];
@@ -117,5 +122,6 @@ void print_help(const char *program_name) {
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
     printf("      --stdin        Read from STDIN instead of a file path\n");
+    printf("      --json         Output results as JSON\n");
     printf("\nNote: Provide either a path or --stdin.\n");
 }

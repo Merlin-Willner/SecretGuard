@@ -61,7 +61,11 @@ int main(int argc, char **argv) {
         }
     }
 
-    scanner_print_report(&scanner);
+    if (config.json_output) {
+        scanner_print_report_json(&scanner);
+    } else {
+        scanner_print_report(&scanner);
+    }
     scanner_destroy(&scanner);
     rules_destroy(&rules);
     free_config(&config);
