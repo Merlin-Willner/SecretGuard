@@ -9,6 +9,7 @@
 
 typedef struct {
     const char *name;
+    severity_t severity;
     const char *pattern;
     int flags;
     regex_t regex;
@@ -21,8 +22,8 @@ typedef struct {
 } RulesImpl;
 
 static const RegexRule DEFAULT_RULES[] = {
-    {"GENERIC_PASSWORD_KV", "password\\s*[:=]\\s*\\S+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_APIKEY_KV", "api[_-]?key\\s*[:=]\\s*\\S+", REG_ICASE | REG_EXTENDED, {0}, false}
+    {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false}
 };
 
 static void free_rules_impl(RulesImpl *rules_impl) {
@@ -113,7 +114,7 @@ void rules_scan_line(const RulesEngine *engine,
                 continue;
             }
 
-            callback(rule->name, start, end, user_data);
+            callback(rule->name, rule->severity, start, end, user_data);
             offset = end;
         }
     }

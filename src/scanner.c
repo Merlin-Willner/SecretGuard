@@ -32,7 +32,7 @@ runs the regex rules on each line, and prints findings when a match is found */
 typedef struct {
     ScannerContext *scanner;
     const char *path;
-    size_t line_number;  
+    size_t line_number;
 } LineContext;
 
 /* Check whether a buffer looks like binary data. */
@@ -63,23 +63,53 @@ void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
 }
 
 
+static const char *severity_label(severity_t severity) {
+    switch (severity) {
+    case SEVERITY_HIGH:
+        return "HIGH";
+    case SEVERITY_MEDIUM:
+        return "MEDIUM";
+    case SEVERITY_LOW:
+    default:
+        return "LOW";
+    }
+}
+
+static const char *severity_color(severity_t severity) {
+    switch (severity) {
+    case SEVERITY_HIGH:
+        return "\x1b[31m";
+    case SEVERITY_MEDIUM:
+        return "\x1b[33m";
+    case SEVERITY_LOW:
+    default:
+        return "\x1b[36m";
+    }
+}
+
 /* Print a single finding to stdout */
 static void print_finding(const char *rule_name,
+                          severity_t severity,
                           const char *path,
                           size_t line_number,
                           size_t column) {
-    printf("FOUND %s at %s:%zu:%zu\n", rule_name, path, line_number, column);
+    const char *color = severity_color(severity);
+    const char *label = severity_label(severity);
+    const char *reset = "\x1b[0m";
+    printf("%s[%s]%s %s at %s:%zu:%zu\n",
+           color, label, reset, rule_name, path, line_number, column);
 }
 
 /* Callback function called by the rules engine when a match is found */
 static void match_callback(const char *rule_name,
+                           severity_t severity,
                            size_t start,
                            size_t end,
                            void *user_data) {
     (void)end;
     LineContext *line_context = (LineContext *)user_data;
     size_t column = start + 1;
-    print_finding(rule_name, line_context->path, line_context->line_number, column);
+    print_finding(rule_name, severity, line_context->path, line_context->line_number, column);
     line_context->scanner->finding_count++;
 }
 
