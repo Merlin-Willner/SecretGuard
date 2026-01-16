@@ -42,7 +42,7 @@ static int walk_recursive(const Config *config,
                           void *user_data) {
     struct stat path_info;
     if (lstat(path, &path_info) != 0) {
-        fprintf(stderr, "Failed to stat %s: %s\n", path, strerror(errno));
+        fprintf(stderr, "ERROR: failed to stat %s: %s\n", path, strerror(errno));
         return depth == 0 ? -1 : 0;
     }
 
@@ -57,7 +57,7 @@ static int walk_recursive(const Config *config,
 
         DIR *directory = opendir(path);
         if (!directory) {
-            fprintf(stderr, "Failed to open directory %s: %s\n", path, strerror(errno));
+            fprintf(stderr, "ERROR: failed to open directory %s: %s\n", path, strerror(errno));
             return depth == 0 ? -1 : 0;
         }
 
