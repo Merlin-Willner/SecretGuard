@@ -23,7 +23,44 @@ typedef struct {
 
 static const RegexRule DEFAULT_RULES[] = {
     {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false}
+    {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_SECRET_KV", SEVERITY_HIGH, "secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_TOKEN_KV", SEVERITY_HIGH, "(access|refresh|id)?_?token[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_BEARER", SEVERITY_HIGH, "bearer[[:space:]]+[A-Za-z0-9._-]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_AUTH_KV", SEVERITY_MEDIUM, "auth(entication|orization)?[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_CLIENT_SECRET_KV", SEVERITY_HIGH, "client[_-]?secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_PRIVATE_KEY_PEM", SEVERITY_HIGH, "-----BEGIN[[:space:]]+(RSA|EC|DSA|OPENSSH)?[[:space:]]*PRIVATE[[:space:]]+KEY-----", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"GOOGLE_API_KEY", SEVERITY_HIGH, "AIza[0-9A-Za-z_-]{35}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GOOGLE_OAUTH_CLIENT_ID", SEVERITY_MEDIUM, "[0-9]+-[A-Za-z0-9_]+\\.apps\\.googleusercontent\\.com", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GOOGLE_SERVICE_ACCOUNT_EMAIL", SEVERITY_MEDIUM, "[A-Za-z0-9._%+-]+@[^[:space:]]+\\.gserviceaccount\\.com", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GOOGLE_SERVICE_ACCOUNT_KV", SEVERITY_HIGH, "\"type\"[[:space:]]*:[[:space:]]*\"service_account\"", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GOOGLE_PRIVATE_KEY_ID_KV", SEVERITY_HIGH, "\"private_key_id\"[[:space:]]*:[[:space:]]*\"[A-Za-z0-9]+\"", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"FIREBASE_API_KEY_KV", SEVERITY_HIGH, "firebase[_-]?api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_DATABASE_URL", SEVERITY_MEDIUM, "https://[A-Za-z0-9-]+\\.(firebaseio\\.com|firebasedatabase\\.app)", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_PROJECT_ID_KV", SEVERITY_MEDIUM, "project[_-]?id[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_MESSAGING_SENDER_ID_KV", SEVERITY_MEDIUM, "messaging[_-]?sender[_-]?id[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_APP_ID", SEVERITY_LOW, "app[_-]?id[[:space:]]*[:=][[:space:]]*1:[0-9]+:(android|ios|web):[A-Za-z0-9]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_STORAGE_BUCKET", SEVERITY_LOW, "storage[_-]?bucket[[:space:]]*[:=][[:space:]]*[A-Za-z0-9._-]+\\.appspot\\.com", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"FIREBASE_MEASUREMENT_ID", SEVERITY_LOW, "measurement[_-]?id[[:space:]]*[:=][[:space:]]*G-[A-Za-z0-9]+", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"GOOGLE_ANALYTICS_ID", SEVERITY_LOW, "(UA-[0-9]{4,}-[0-9]+|G-[A-Za-z0-9]+)", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"GITHUB_TOKEN", SEVERITY_HIGH, "gh[opusr]_[A-Za-z0-9]{36,}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GITHUB_CLASSIC_TOKEN", SEVERITY_HIGH, "ghp_[A-Za-z0-9]{36,}", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"GITLAB_TOKEN", SEVERITY_HIGH, "glpat-[A-Za-z0-9_-]{20,}", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"SLACK_TOKEN", SEVERITY_HIGH, "xox[baprs]-[A-Za-z0-9-]{10,48}", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"JWT_TOKEN", SEVERITY_MEDIUM, "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9._-]+\\.[A-Za-z0-9._-]+", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"AWS_ACCESS_KEY_ID", SEVERITY_HIGH, "AKIA[0-9A-Z]{16}", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"AWS_SECRET_ACCESS_KEY_KV", SEVERITY_HIGH, "aws[_-]?secret[_-]?access[_-]?key[[:space:]]*[:=][[:space:]]*[A-Za-z0-9/+=]{40}", REG_ICASE | REG_EXTENDED, {0}, false},
+
+    {"DATABASE_URL_KV", SEVERITY_MEDIUM, "(database|db)[_-]?url[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"JDBC_URL", SEVERITY_MEDIUM, "jdbc:[A-Za-z0-9]+:[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false}
 };
 
 static void free_rules_impl(RulesImpl *rules_impl) {
