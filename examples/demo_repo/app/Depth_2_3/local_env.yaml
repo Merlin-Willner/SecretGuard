@@ -1,0 +1,2 @@
+database_url: postgres://user:pass@localhost:5432/dbname
+jdbc_url: jdbc:postgresql://localhost:5432/dbname
