@@ -19,6 +19,9 @@ typedef struct {
     size_t finding_count;
     /* Highest severity seen so far (valid only if finding_count > 0). */
     severity_t highest_severity;
+    /* File scan counters. */
+    size_t files_scanned;
+    size_t files_skipped;
     /* Linked list of findings for reporting after scanning. */
     ScannerFindingNode *findings_head;
     ScannerFindingNode *findings_tail;
