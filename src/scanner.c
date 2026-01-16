@@ -72,6 +72,8 @@ void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
     scanner->highest_severity = SEVERITY_LOW;
     scanner->findings_head = NULL;
     scanner->findings_tail = NULL;
+    scanner->files_scanned = 0;
+    scanner->files_skipped = 0;
 }
 
 static char *duplicate_string(const char *text) {
@@ -84,6 +86,27 @@ static char *duplicate_string(const char *text) {
         memcpy(copy, text, length);
     }
     return copy;
+}
+
+static int compare_findings(const ScannerFindingNode *a, const ScannerFindingNode *b) {
+    if (a->severity != b->severity) {
+        return (int)b->severity - (int)a->severity;
+    }
+
+    int path_cmp = strcmp(a->path, b->path);
+    if (path_cmp != 0) {
+        return path_cmp;
+    }
+
+    if (a->line_number != b->line_number) {
+        return (a->line_number < b->line_number) ? -1 : 1;
+    }
+
+    if (a->column != b->column) {
+        return (a->column < b->column) ? -1 : 1;
+    }
+
+    return strcmp(a->rule_name, b->rule_name);
 }
 
 static int append_finding(ScannerContext *scanner,
@@ -114,12 +137,29 @@ static int append_finding(ScannerContext *scanner,
     node->line_number = line_number;
     node->column = column;
 
-    if (scanner->findings_tail) {
-        scanner->findings_tail->next = node;
-    } else {
+    if (!scanner->findings_head) {
         scanner->findings_head = node;
+        scanner->findings_tail = node;
+    } else {
+        ScannerFindingNode *prev = NULL;
+        ScannerFindingNode *current = scanner->findings_head;
+        while (current && compare_findings(current, node) <= 0) {
+            prev = current;
+            current = current->next;
+        }
+
+        if (!prev) {
+            node->next = scanner->findings_head;
+            scanner->findings_head = node;
+        } else {
+            node->next = current;
+            prev->next = node;
+        }
+
+        if (!node->next) {
+            scanner->findings_tail = node;
+        }
     }
-    scanner->findings_tail = node;
 
     scanner->finding_count++;
     if (severity > scanner->highest_severity) {
@@ -189,8 +229,14 @@ void scanner_print_report(const ScannerContext *scanner) {
         }
     }
 
-    printf("Summary: %s%s %s%s - %zu findings\n",
-           status_color, status_icon, status, status_reset, scanner->finding_count);
+    printf("Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
+           status_color,
+           status_icon,
+           status,
+           status_reset,
+           scanner->finding_count,
+           scanner->files_scanned,
+           scanner->files_skipped);
     printf("Results:\n");
     if (scanner->finding_count == 0) {
         printf("  (no findings)\n");
@@ -225,6 +271,8 @@ void scanner_destroy(ScannerContext *scanner) {
     scanner->findings_tail = NULL;
     scanner->finding_count = 0;
     scanner->highest_severity = SEVERITY_LOW;
+    scanner->files_scanned = 0;
+    scanner->files_skipped = 0;
 }
 
 /* Callback function called by the rules engine when a match is found */
@@ -278,7 +326,7 @@ static int scan_file_descriptor(ScannerContext *scanner,
         if (!checked_binary) {
             checked_binary = true;
             if (is_binary_buffer((const unsigned char *)buffer, (size_t)bytes_read)) {
-                result = 0;
+                result = 1;
                 goto cleanup;
             }
         }
@@ -339,11 +387,20 @@ int scanner_scan_path(ScannerContext *scanner, const char *path) {
     int file_descriptor = open(path, O_RDONLY);
     if (file_descriptor < 0) {
         fprintf(stderr, "ERROR: failed to open %s: %s\n", path, strerror(errno));
+        scanner->files_skipped++;
         return -1;
     }
 
     int result = scan_file_descriptor(scanner, path, file_descriptor);
     close(file_descriptor);
+    if (result == 0) {
+        scanner->files_scanned++;
+    } else if (result > 0) {
+        scanner->files_skipped++;
+        result = 0;
+    } else {
+        scanner->files_skipped++;
+    }
     return result;
 }
 
@@ -351,5 +408,14 @@ int scanner_scan_path(ScannerContext *scanner, const char *path) {
 int scanner_scan_stdin(ScannerContext *scanner) {
     if (!scanner) return -1;
 
-    return scan_file_descriptor(scanner, DEFAULT_STDIN_LABEL, STDIN_FILENO);
+    int result = scan_file_descriptor(scanner, DEFAULT_STDIN_LABEL, STDIN_FILENO);
+    if (result == 0) {
+        scanner->files_scanned++;
+    } else if (result > 0) {
+        scanner->files_skipped++;
+        result = 0;
+    } else {
+        scanner->files_skipped++;
+    }
+    return result;
 }
