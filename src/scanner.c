@@ -160,11 +160,12 @@ static void print_finding(const char *rule_name,
                           const char *path,
                           size_t line_number,
                           size_t column) {
-    const char *color = severity_color(severity);
     const char *label = severity_label(severity);
+    const char *color = severity_color(severity);
     const char *reset = "\x1b[0m";
-    printf("  %s[%s]%s %-20s  %s:%zu:%zu\n",
-           color, label, reset, rule_name, path, line_number, column);
+    printf("%s[%s]%s %s\n", color, label, reset, rule_name);
+    printf("  file: %s:%zu:%zu\n", path, line_number, column);
+    printf("  Line: %zu, Col: %zu\n", line_number, column);
 }
 
 void scanner_print_report(const ScannerContext *scanner) {
@@ -181,7 +182,7 @@ void scanner_print_report(const ScannerContext *scanner) {
             status = "ERROR";
             status_icon = "\u2716";
             status_color = "\x1b[31m";
-        } else {
+        } else if (scanner->highest_severity == SEVERITY_MEDIUM) {
             status = "WARN";
             status_icon = "\u26a0";
             status_color = "\x1b[33m";
