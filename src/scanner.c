@@ -302,6 +302,14 @@ void scanner_print_report(const ScannerContext *scanner, FILE *out) {
                           use_color);
             current = current->next;
         }
+        fprintf(out, "Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
+        status_color,
+        status_icon,
+        status,
+        status_reset,
+        scanner->finding_count,
+        scanner->files_scanned,
+        scanner->files_skipped);
     }
 }
 
