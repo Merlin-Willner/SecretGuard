@@ -45,6 +45,17 @@ int main(int argc, char **argv) {
     scanner_init(&scanner, &rules);
 
     int exit_code = 0;
+    FILE *out = stdout;
+    if (config.output_path) {
+        out = fopen(config.output_path, "w");
+        if (!out) {
+            fprintf(stderr, "ERROR: failed to open output file %s.\n", config.output_path);
+            scanner_destroy(&scanner);
+            rules_destroy(&rules);
+            free_config(&config);
+            return 1;
+        }
+    }
 
     if (config.stdin_mode) {
         /* Scan from standard input. */
@@ -62,9 +73,12 @@ int main(int argc, char **argv) {
     }
 
     if (config.json_output) {
-        scanner_print_report_json(&scanner);
+        scanner_print_report_json(&scanner, out);
     } else {
-        scanner_print_report(&scanner);
+        scanner_print_report(&scanner, out);
+    }
+    if (out != stdout) {
+        fclose(out);
     }
     scanner_destroy(&scanner);
     rules_destroy(&rules);

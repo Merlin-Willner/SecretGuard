@@ -238,52 +238,58 @@ static void json_write_string(FILE *out, const char *text) {
     fputc('"', out);
 }
 
-/* Print a single finding to stdout */
+/* Print a single finding to a stream */
 static void print_finding(const char *rule_name,
                           severity_t severity,
                           const char *path,
                           size_t line_number,
-                          size_t column) {
+                          size_t column,
+                          FILE *out,
+                          bool use_color) {
     const char *label = severity_label(severity);
-    const char *color = severity_color(severity);
-    const char *reset = "\x1b[0m";
-    printf("%s[%s]%s %s\n", color, label, reset, rule_name);
-    printf("  File: %s:%zu:%zu\n", path, line_number, column);
-    printf("  Line: %zu, Col: %zu\n", line_number, column);
+    const char *color = use_color ? severity_color(severity) : "";
+    const char *reset = use_color ? "\x1b[0m" : "";
+    fprintf(out, "%s[%s]%s %s\n", color, label, reset, rule_name);
+    fprintf(out, "  file: %s:%zu:%zu\n", path, line_number, column);
+    fprintf(out, "  line: %zu, col: %zu\n", line_number, column);
 }
 
-void scanner_print_report(const ScannerContext *scanner) {
+void scanner_print_report(const ScannerContext *scanner, FILE *out) {
     if (!scanner) {
         return;
     }
+    if (!out) {
+        out = stdout;
+    }
+    bool use_color = (out == stdout);
 
     const char *status = "OK";
     const char *status_icon = "\u2713";
-    const char *status_color = "\x1b[32m";
-    const char *status_reset = "\x1b[0m";
+    const char *status_color = use_color ? "\x1b[32m" : "";
+    const char *status_reset = use_color ? "\x1b[0m" : "";
     if (scanner->finding_count > 0) {
         if (scanner->highest_severity == SEVERITY_HIGH) {
             status = "ERROR";
             status_icon = "\u2716";
-            status_color = "\x1b[31m";
+            status_color = use_color ? "\x1b[31m" : "";
         } else if (scanner->highest_severity == SEVERITY_MEDIUM) {
             status = "WARN";
             status_icon = "\u26a0";
-            status_color = "\x1b[33m";
+            status_color = use_color ? "\x1b[33m" : "";
         }
     }
 
-    printf("Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
-           status_color,
-           status_icon,
-           status,
-           status_reset,
-           scanner->finding_count,
-           scanner->files_scanned,
-           scanner->files_skipped);
-    printf("Results:\n");
+    fprintf(out, "Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
+            status_color,
+            status_icon,
+            status,
+            status_reset,
+            scanner->finding_count,
+            scanner->files_scanned,
+            scanner->files_skipped);
+    fprintf(out, "Results:\n");
     if (scanner->finding_count == 0) {
-        printf("  (no findings)\n");
+        fprintf(out, "  (no findings)\n");
     } else {
         const ScannerFindingNode *current = scanner->findings_head;
         while (current) {
@@ -291,15 +297,20 @@ void scanner_print_report(const ScannerContext *scanner) {
                           current->severity,
                           current->path,
                           current->line_number,
-                          current->column);
+                          current->column,
+                          out,
+                          use_color);
             current = current->next;
         }
     }
 }
 
-void scanner_print_report_json(const ScannerContext *scanner) {
+void scanner_print_report_json(const ScannerContext *scanner, FILE *out) {
     if (!scanner) {
         return;
+    }
+    if (!out) {
+        out = stdout;
     }
 
     const char *status = "OK";
@@ -311,33 +322,33 @@ void scanner_print_report_json(const ScannerContext *scanner) {
         }
     }
 
-    printf("{\"summary\":{");
-    printf("\"status\":");
-    json_write_string(stdout, status);
-    printf(",\"findings\":%zu,\"files_scanned\":%zu,\"files_skipped\":%zu}",
-           scanner->finding_count,
-           scanner->files_scanned,
-           scanner->files_skipped);
-    printf(",\"findings\":[");
+    fprintf(out, "{\"summary\":{");
+    fprintf(out, "\"status\":");
+    json_write_string(out, status);
+    fprintf(out, ",\"findings\":%zu,\"files_scanned\":%zu,\"files_skipped\":%zu}",
+            scanner->finding_count,
+            scanner->files_scanned,
+            scanner->files_skipped);
+    fprintf(out, ",\"findings\":[");
 
     const ScannerFindingNode *current = scanner->findings_head;
     bool first = true;
     while (current) {
         if (!first) {
-            fputc(',', stdout);
+            fputc(',', out);
         }
         first = false;
-        printf("{\"severity\":");
-        json_write_string(stdout, severity_label(current->severity));
-        printf(",\"rule\":");
-        json_write_string(stdout, current->rule_name);
-        printf(",\"file\":");
-        json_write_string(stdout, current->path);
-        printf(",\"line\":%zu,\"col\":%zu}", current->line_number, current->column);
+        fprintf(out, "{\"severity\":");
+        json_write_string(out, severity_label(current->severity));
+        fprintf(out, ",\"rule\":");
+        json_write_string(out, current->rule_name);
+        fprintf(out, ",\"file\":");
+        json_write_string(out, current->path);
+        fprintf(out, ",\"line\":%zu,\"col\":%zu}", current->line_number, current->column);
         current = current->next;
     }
 
-    printf("]}\n");
+    fprintf(out, "]}\n");
 }
 
 void scanner_destroy(ScannerContext *scanner) {

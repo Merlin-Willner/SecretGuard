@@ -67,6 +67,35 @@ int parse_arguments(int argc, char **argv, Config *config) {
             config->stdin_mode = true;
         } else if (strcmp(arg, "--json") == 0) {
             config->json_output = true;
+        } else if (strncmp(arg, "--out", 5) == 0) {
+            // Supports "--out file" and "--out=file".
+            const char *value = NULL;
+            if (strcmp(arg, "--out") == 0) {
+                if (i + 1 >= argc) {
+                    fprintf(stderr, "ERROR: --out requires a value.\n");
+                    return 2;
+                }
+                value = argv[++i];
+            } else if (arg[5] == '=') {
+                value = arg + 6;
+            } else {
+                fprintf(stderr, "ERROR: invalid --out usage: %s\n", arg);
+                return 2;
+            }
+
+            if (!value || value[0] == '\0') {
+                fprintf(stderr, "ERROR: invalid --out value.\n");
+                return 2;
+            }
+            if (config->output_path) {
+                fprintf(stderr, "ERROR: multiple --out values provided.\n");
+                return 2;
+            }
+            config->output_path = duplicate_string(value);
+            if (!config->output_path) {
+                fprintf(stderr, "ERROR: could not copy --out value.\n");
+                return 2;
+            }
         } else if (arg[0] == '-') {
             fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
@@ -125,6 +154,9 @@ void print_config(const Config *config) {
                APP_NAME, APP_VERSION, mode_label, depth_label);
     }
     printf("Target:  %s\n", target_label);
+    if (config->output_path) {
+        printf("Output:  %s\n", config->output_path);
+    }
 }
 
 // Show usage info.
@@ -136,5 +168,6 @@ void print_help(const char *program_name) {
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
     printf("      --stdin        Read from STDIN instead of a file path\n");
     printf("      --json         Output results as JSON\n");
+    printf("      --out FILE     Write results to FILE instead of stdout\n");
     printf("\nNote: Provide either a path or --stdin.\n");
 }
