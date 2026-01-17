@@ -14,6 +14,7 @@ typedef struct {
     bool stdin_mode;
     bool json_output;
     int threads;
+    char *output_path;
 } Config;
 
 void init_config(Config *config);

@@ -24,9 +24,9 @@ typedef struct {
 static const RegexRule DEFAULT_RULES[] = {
     {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])secret[[:space:]]*[:=][[:space:]]*[^[:space:]]{8,}", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_TOKEN_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])(access|refresh|id)?_?token[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
-    {"GENERIC_BEARER", SEVERITY_HIGH, "bearer[[:space:]]+[A-Za-z0-9._-]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_BEARER", SEVERITY_HIGH, "(^|[^[:alnum:]_-])bearer[[:space:]]+[A-Za-z0-9._-]{10,}", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_AUTH_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])auth(entication|orization)?[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_CLIENT_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])client[_-]?secret[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_PRIVATE_KEY_PEM", SEVERITY_HIGH, "-----BEGIN[[:space:]]+(RSA|EC|DSA|OPENSSH)?[[:space:]]*PRIVATE[[:space:]]+KEY-----", REG_ICASE | REG_EXTENDED, {0}, false},

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "rules.h"
 
@@ -31,10 +32,10 @@ typedef struct {
 void scanner_init(ScannerContext *scanner, RulesEngine *rules);
 
 /* Print summary and results after scanning. */
-void scanner_print_report(const ScannerContext *scanner);
+void scanner_print_report(const ScannerContext *scanner, FILE *out);
 
 /* Print JSON summary and results after scanning. */
-void scanner_print_report_json(const ScannerContext *scanner);
+void scanner_print_report_json(const ScannerContext *scanner, FILE *out);
 
 /* Release memory allocated for stored findings. */
 void scanner_destroy(ScannerContext *scanner);

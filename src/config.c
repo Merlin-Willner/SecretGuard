@@ -12,6 +12,7 @@ void init_config(Config *config) {
     config->stdin_mode = false;
     config->json_output = false;
     config->threads = DEFAULT_THREADS;
+    config->output_path = NULL;
 }
 
 // Free memory owned by the config.
@@ -21,4 +22,6 @@ void free_config(Config *config) {
     }
     free(config->root_path);
     config->root_path = NULL;
+    free(config->output_path);
+    config->output_path = NULL;
 }

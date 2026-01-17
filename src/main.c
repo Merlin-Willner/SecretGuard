@@ -48,11 +48,40 @@ int main(int argc, char **argv) {
             exit_code = 1;
         }
     }
+    FILE *out = stdout;
+    if (config.output_path) {
+        out = fopen(config.output_path, "w");
+        if (!out) {
+            fprintf(stderr, "ERROR: failed to open output file %s.\n", config.output_path);
+            scanner_destroy(&scanner);
+            rules_destroy(&rules);
+            free_config(&config);
+            return 1;
+        }
+    }
+
+    if (config.stdin_mode) {
+        /* Scan from standard input. */
+        if (scanner_scan_stdin(&scanner) != 0) {
+            fprintf(stderr, "ERROR: scanning stdin failed.\n");
+            exit_code = 1;
+        }
+    } else {
+        /* Recursively walk the root path and scan files. */
+        int walk_result = walk_path(&config, scan_file_callback, &scanner);
+        if (walk_result != 0) {
+            fprintf(stderr, "ERROR: walking path failed.\n");
+            exit_code = 1;
+        }
+    }
 
     if (config.json_output) {
-        scanner_print_report_json(&scanner);
+        scanner_print_report_json(&scanner, out);
     } else {
-        scanner_print_report(&scanner);
+        scanner_print_report(&scanner, out);
+    }
+    if (out != stdout) {
+        fclose(out);
     }
     scanner_destroy(&scanner);
     rules_destroy(&rules);
