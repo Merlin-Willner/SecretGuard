@@ -11,6 +11,9 @@ static int parse_int(const char *text, int *out_value) {
     if (!text || !out_value) {
         return -1;
     }
+    if (text[0] == '\0') {
+        return -1;
+    }
     char *end_ptr = NULL;
     long parsed = strtol(text, &end_ptr, 10);
     if (!end_ptr || *end_ptr != '\0') {
@@ -103,6 +106,11 @@ int parse_arguments(int argc, char **argv, Config *config) {
         }
 
         i++;
+    }
+
+    if (config->stdin_mode && config->root_path) {
+        fprintf(stderr, "ERROR: --stdin cannot be combined with a path.\n");
+        return 2;
     }
 
     // Default to current directory when no path or stdin is provided.
