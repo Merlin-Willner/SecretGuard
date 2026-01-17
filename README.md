@@ -25,3 +25,12 @@ Examples:
   ./secretguard --max-depth 3 /path/to/scan
   ./secretguard --stdin
   ./secretguard --help
+
+## Git Hook
+
+To enable the optional pre-commit hook:
+
+  git config core.hooksPath .githooks
+  chmod +x .githooks/pre-commit
+
+The hook runs `secretguard` on staged files and blocks commits if findings are detected.
