@@ -4,18 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Make a heap copy of a C string.
-static char *duplicate_string(const char *text) {
-    if (!text) {
-        return NULL;
-    }
-    size_t length = strlen(text) + 1;
-    char *copy = malloc(length);
-    if (copy) {
-        memcpy(copy, text, length);
-    }
-    return copy;
-}
+#include "util.h"
 
 // Parse a full integer (no extra characters).
 static int parse_int(const char *text, int *out_value) {
