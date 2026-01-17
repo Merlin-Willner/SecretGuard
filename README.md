@@ -1,8 +1,5 @@
 # SecretGuard
 
-This project only parses input flags and prints what it understood.
-It does not scan files yet.
-
 ## Build
 
 You need a C compiler (gcc).
@@ -25,3 +22,24 @@ Examples:
   ./secretguard --max-depth 3 /path/to/scan
   ./secretguard --stdin
   ./secretguard --help
+
+## Help
+
+SecretGuard 0.1.0
+Usage: ./secretguard [OPTIONS] <path>
+Options:
+  -h, --help         Show this help text
+      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
+      --stdin        Read from STDIN instead of a file path
+      --json         Output results as JSON
+
+Note: Provide either a path or --stdin.
+
+## AI Usage
+
+We used Github Copilot, ChatGPT-5 as well as Codex models for the following tasks:
+  - Initial project scaffolding as a consultant and pair programmer
+  - Parsing command-line arguments
+  - Generating and explaining regex patterns as well as the examples and demo_repos used in testing
+  - Generating Makefile
+  - Git hooks bash script
