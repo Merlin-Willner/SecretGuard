@@ -22,6 +22,9 @@ static int parse_int(const char *text, int *out_value) {
     if (!text || !out_value) {
         return -1;
     }
+    if (text[0] == '\0') {
+        return -1;
+    }
     char *end_ptr = NULL;
     long parsed = strtol(text, &end_ptr, 10);
     if (!end_ptr || *end_ptr != '\0') {
@@ -34,6 +37,9 @@ static int parse_int(const char *text, int *out_value) {
 // Parse CLI args into the config.
 // Returns: 0 = ok, 1 = help shown, 2 = error.
 int parse_arguments(int argc, char **argv, Config *config) {
+    if (!config) {
+        return 2;
+    }
     int i = 1;
     const char *prog = (argc > 0) ? argv[0] : "app";
 
@@ -44,7 +50,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
             print_help(prog);
             return 1;
         } else if (strncmp(arg, "--max-depth", 11) == 0) {
-            // Supports "--max-depth 3" and "--max-depth=3".
             const char *value = NULL;
             if (strcmp(arg, "--max-depth") == 0) {
                 if (i + 1 >= argc) {
@@ -64,7 +69,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
                 return 2;
             }
         } else if (strncmp(arg, "--threads", 9) == 0) {
-            // Supports "--threads 4" and "--threads=4".
             const char *value = NULL;
             if (strcmp(arg, "--threads") == 0) {
                 if (i + 1 >= argc) {
@@ -87,20 +91,7 @@ int parse_arguments(int argc, char **argv, Config *config) {
             config->stdin_mode = true;
         } else if (strcmp(arg, "--json") == 0) {
             config->json_output = true;
-        } else if (arg[0] == '-') {
-            fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
-            return 2;
-        } else {
-            if (parse_int(value, &config->max_depth) != 0) {
-                fprintf(stderr, "ERROR: invalid --max-depth value: %s\n", value ? value : "(null)");
-                return 2;
-            }
-        } else if (strcmp(arg, "--stdin") == 0) {
-            config->stdin_mode = true;
-        } else if (strcmp(arg, "--json") == 0) {
-            config->json_output = true;
         } else if (strncmp(arg, "--out", 5) == 0) {
-            // Supports "--out file" and "--out=file".
             const char *value = NULL;
             if (strcmp(arg, "--out") == 0) {
                 if (i + 1 >= argc) {
@@ -132,7 +123,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
             fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
         } else {
-            // Only one path is allowed.
             if (!config->root_path) {
                 config->root_path = duplicate_string(arg);
                 if (!config->root_path) {
@@ -148,7 +138,11 @@ int parse_arguments(int argc, char **argv, Config *config) {
         i++;
     }
 
-    // Default to current directory when no path or stdin is provided.
+    if (config->stdin_mode && config->root_path) {
+        fprintf(stderr, "ERROR: --stdin cannot be combined with a path.\n");
+        return 2;
+    }
+
     if (!config->root_path && !config->stdin_mode) {
         config->root_path = duplicate_string(".");
         if (!config->root_path) {
@@ -193,13 +187,6 @@ void print_config(const Config *config) {
         printf("Threads: %s\n", threads_label);
     }
     printf("Target:  %s\n", target_label);
-    if (config->stdin_mode) {
-        printf("%s v%s  \u2022  mode: %s\n", APP_NAME, APP_VERSION, mode_label);
-    } else {
-        printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
-               APP_NAME, APP_VERSION, mode_label, depth_label);
-    }
-    printf("Target:  %s\n", target_label);
     if (config->output_path) {
         printf("Output:  %s\n", config->output_path);
     }
@@ -213,13 +200,6 @@ void print_help(const char *program_name) {
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
     printf("      --threads N    Number of worker threads (default: 0 for auto)\n");
-    printf("      --stdin        Read from STDIN instead of a file path\n");
-    printf("      --json         Output results as JSON\n");
-    printf("\nNote: Provide either a path or --stdin.\n");
-}
-    printf("Options:\n");
-    printf("  -h, --help         Show this help text\n");
-    printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
     printf("      --stdin        Read from STDIN instead of a file path\n");
     printf("      --json         Output results as JSON\n");
     printf("      --out FILE     Write results to FILE instead of stdout\n");

@@ -30,8 +30,10 @@ Usage: ./secretguard [OPTIONS] <path>
 Options:
   -h, --help         Show this help text
       --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
+      --threads N    Number of worker threads (default: 0 for auto)
       --stdin        Read from STDIN instead of a file path
       --json         Output results as JSON
+      --out FILE     Write results to FILE instead of stdout
 
 Note: Provide either a path or --stdin.
 
@@ -52,4 +54,4 @@ We used Github Copilot, ChatGPT-5 as well as Codex models for the following task
   - Generating and explaining regex patterns as well as the examples and demo_repos used in testing
   - Generating Makefile
   - Git hooks bash script
-  - pthreads 
+  - pthreads

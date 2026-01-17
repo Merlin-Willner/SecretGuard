@@ -120,6 +120,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
 
     for (size_t i = 0; i < thread_count; ++i) {
         scanner_merge(scanner, &workers[i].scanner);
+        scanner_destroy(&workers[i].scanner);
     }
 
     free(worker_contexts);
