@@ -2,19 +2,8 @@
 
 #include "cli.h"
 #include "rules.h"
+#include "scanner_parallel.h"
 #include "scanner.h"
-#include "walk.h"
-
-/* Callback passed to the directory walker: scans a single file path. */
-static int scan_file_callback(const char *path, void *user_data) {
-    ScannerContext *scanner = (ScannerContext *)user_data;
-    int res = scanner_scan_path(scanner, path);
-    if (res != 0) {
-        /* Log and continue walking; do not abort the whole traversal. */
-        return 0;
-    }
-    return 0;
-}
 
 int main(int argc, char **argv) {
     Config config;
@@ -45,6 +34,20 @@ int main(int argc, char **argv) {
     scanner_init(&scanner, &rules);
 
     int exit_code = 0;
+
+    if (config.stdin_mode) {
+        /* Scan from standard input. */
+        if (scanner_scan_stdin(&scanner) != 0) {
+            fprintf(stderr, "ERROR: scanning stdin failed.\n");
+            exit_code = 1;
+        }
+    } else {
+        /* Walk the root path and scan files (serial or parallel). */
+        if (scanner_scan_parallel(&config, &rules, &scanner) != 0) {
+            fprintf(stderr, "ERROR: scanning path failed.\n");
+            exit_code = 1;
+        }
+    }
     FILE *out = stdout;
     if (config.output_path) {
         out = fopen(config.output_path, "w");

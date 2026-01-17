@@ -63,6 +63,38 @@ int parse_arguments(int argc, char **argv, Config *config) {
                 fprintf(stderr, "ERROR: invalid --max-depth value: %s\n", value ? value : "(null)");
                 return 2;
             }
+        } else if (strncmp(arg, "--threads", 9) == 0) {
+            // Supports "--threads 4" and "--threads=4".
+            const char *value = NULL;
+            if (strcmp(arg, "--threads") == 0) {
+                if (i + 1 >= argc) {
+                    fprintf(stderr, "ERROR: --threads requires a value.\n");
+                    return 2;
+                }
+                value = argv[++i];
+            } else if (arg[9] == '=') {
+                value = arg + 10;
+            } else {
+                fprintf(stderr, "ERROR: invalid --threads usage: %s\n", arg);
+                return 2;
+            }
+
+            if (parse_int(value, &config->threads) != 0 || config->threads < 0) {
+                fprintf(stderr, "ERROR: invalid --threads value: %s\n", value ? value : "(null)");
+                return 2;
+            }
+        } else if (strcmp(arg, "--stdin") == 0) {
+            config->stdin_mode = true;
+        } else if (strcmp(arg, "--json") == 0) {
+            config->json_output = true;
+        } else if (arg[0] == '-') {
+            fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
+            return 2;
+        } else {
+            if (parse_int(value, &config->max_depth) != 0) {
+                fprintf(stderr, "ERROR: invalid --max-depth value: %s\n", value ? value : "(null)");
+                return 2;
+            }
         } else if (strcmp(arg, "--stdin") == 0) {
             config->stdin_mode = true;
         } else if (strcmp(arg, "--json") == 0) {
@@ -150,6 +182,20 @@ void print_config(const Config *config) {
     if (config->stdin_mode) {
         printf("%s v%s  \u2022  mode: %s\n", APP_NAME, APP_VERSION, mode_label);
     } else {
+        char threads_label[32];
+        if (config->threads <= 0) {
+            snprintf(threads_label, sizeof(threads_label), "auto");
+        } else {
+            snprintf(threads_label, sizeof(threads_label), "%d", config->threads);
+        }
+        printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
+               APP_NAME, APP_VERSION, mode_label, depth_label);
+        printf("Threads: %s\n", threads_label);
+    }
+    printf("Target:  %s\n", target_label);
+    if (config->stdin_mode) {
+        printf("%s v%s  \u2022  mode: %s\n", APP_NAME, APP_VERSION, mode_label);
+    } else {
         printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
                APP_NAME, APP_VERSION, mode_label, depth_label);
     }
@@ -163,6 +209,14 @@ void print_config(const Config *config) {
 void print_help(const char *program_name) {
     printf("%s %s\n", APP_NAME, APP_VERSION);
     printf("Usage: %s [OPTIONS] <path>\n", program_name);
+    printf("Options:\n");
+    printf("  -h, --help         Show this help text\n");
+    printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
+    printf("      --threads N    Number of worker threads (default: 0 for auto)\n");
+    printf("      --stdin        Read from STDIN instead of a file path\n");
+    printf("      --json         Output results as JSON\n");
+    printf("\nNote: Provide either a path or --stdin.\n");
+}
     printf("Options:\n");
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
