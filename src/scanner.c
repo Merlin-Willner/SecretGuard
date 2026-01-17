@@ -248,7 +248,7 @@ static void print_finding(const char *rule_name,
     const char *color = severity_color(severity);
     const char *reset = "\x1b[0m";
     printf("%s[%s]%s %s\n", color, label, reset, rule_name);
-    printf("  file: %s:%zu:%zu\n", path, line_number, column);
+    printf("  File: %s:%zu:%zu\n", path, line_number, column);
     printf("  Line: %zu, Col: %zu\n", line_number, column);
 }
 
