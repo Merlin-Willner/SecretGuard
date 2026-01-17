@@ -39,6 +39,9 @@ void scanner_print_report_json(const ScannerContext *scanner);
 /* Release memory allocated for stored findings. */
 void scanner_destroy(ScannerContext *scanner);
 
+/* Merge findings and counters from one context into another. */
+void scanner_merge(ScannerContext *dest, ScannerContext *src);
+
 /* Scan a file path and report findings to stdout (returns 0 on success). */
 /* Returns -1 if the file cannot be opened or read. */
 int scanner_scan_path(ScannerContext *scanner, const char *path);

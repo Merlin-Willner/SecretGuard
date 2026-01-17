@@ -169,6 +169,28 @@ static int append_finding(ScannerContext *scanner,
     return 0;
 }
 
+void scanner_merge(ScannerContext *dest, ScannerContext *src) {
+    if (!dest || !src) {
+        return;
+    }
+
+    ScannerFindingNode *current = src->findings_head;
+    while (current) {
+        append_finding(dest,
+                       current->rule_name,
+                       current->severity,
+                       current->path,
+                       current->line_number,
+                       current->column);
+        current = current->next;
+    }
+
+    dest->files_scanned += src->files_scanned;
+    dest->files_skipped += src->files_skipped;
+
+    scanner_destroy(src);
+}
+
 
 static const char *severity_label(severity_t severity) {
     switch (severity) {

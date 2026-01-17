@@ -11,6 +11,7 @@ void init_config(Config *config) {
     config->max_depth = DEFAULT_MAX_DEPTH;
     config->stdin_mode = false;
     config->json_output = false;
+    config->threads = DEFAULT_THREADS;
 }
 
 // Free memory owned by the config.
