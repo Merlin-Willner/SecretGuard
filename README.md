@@ -35,6 +35,15 @@ Options:
 
 Note: Provide either a path or --stdin.
 
+## Git Hook
+
+To enable the optional pre-commit hook:
+
+  git config core.hooksPath .githooks
+  chmod +x .githooks/pre-commit
+
+The hook runs `secretguard` on staged files and blocks commits if findings are detected.
+
 ## AI Usage
 
 We used Github Copilot, ChatGPT-5 as well as Codex models for the following tasks:
