@@ -23,6 +23,8 @@ typedef struct {
     /* File scan counters. */
     size_t files_scanned;
     size_t files_skipped;
+    /* Indicates whether scanning encountered a fatal error. */
+    bool scan_failed;
     /* Linked list of findings for reporting after scanning. */
     ScannerFindingNode *findings_head;
     ScannerFindingNode *findings_tail;

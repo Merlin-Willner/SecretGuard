@@ -69,6 +69,7 @@ void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
     scanner->findings_tail = NULL;
     scanner->files_scanned = 0;
     scanner->files_skipped = 0;
+    scanner->scan_failed = false;
 }
 
 static int compare_findings(const ScannerFindingNode *a, const ScannerFindingNode *b) {
@@ -170,6 +171,7 @@ void scanner_merge(ScannerContext *dest, ScannerContext *src) {
 
     dest->files_scanned += src->files_scanned;
     dest->files_skipped += src->files_skipped;
+    dest->scan_failed = dest->scan_failed || src->scan_failed;
 }
 
 static const char *severity_label(severity_t severity) {
@@ -268,7 +270,11 @@ void scanner_print_report(const ScannerContext *scanner, FILE *out) {
     const char *status_icon = "\u2713";
     const char *status_color = use_color ? "\x1b[32m" : "";
     const char *status_reset = use_color ? "\x1b[0m" : "";
-    if (scanner->finding_count > 0) {
+    if (scanner->scan_failed) {
+        status = "ERROR";
+        status_icon = "\u2716";
+        status_color = use_color ? "\x1b[31m" : "";
+    } else if (scanner->finding_count > 0) {
         if (scanner->highest_severity == SEVERITY_HIGH) {
             status = "ERROR";
             status_icon = "\u2716";
@@ -288,11 +294,12 @@ void scanner_print_report(const ScannerContext *scanner, FILE *out) {
             scanner->finding_count,
             scanner->files_scanned,
             scanner->files_skipped);
-    fprintf(out, "Results:\n");
+    fprintf(out, "Results:");
     if (scanner->finding_count == 0) {
-        fprintf(out, "  (no findings)\n");
+        fprintf(out, " (no findings)\n");
     } else {
         const ScannerFindingNode *current = scanner->findings_head;
+        fprintf(out, "\n");
         while (current) {
             print_finding(current->rule_name,
                           current->severity,
@@ -323,7 +330,9 @@ void scanner_print_report_json(const ScannerContext *scanner, FILE *out) {
     }
 
     const char *status = "OK";
-    if (scanner->finding_count > 0) {
+    if (scanner->scan_failed) {
+        status = "ERROR";
+    } else if (scanner->finding_count > 0) {
         if (scanner->highest_severity == SEVERITY_HIGH) {
             status = "ERROR";
         } else if (scanner->highest_severity == SEVERITY_MEDIUM) {
@@ -334,10 +343,11 @@ void scanner_print_report_json(const ScannerContext *scanner, FILE *out) {
     fprintf(out, "{\"summary\":{");
     fprintf(out, "\"status\":");
     json_write_string(out, status);
-    fprintf(out, ",\"findings\":%zu,\"files_scanned\":%zu,\"files_skipped\":%zu}",
+    fprintf(out, ",\"findings\":%zu,\"files_scanned\":%zu,\"files_skipped\":%zu,\"scan_failed\":%s}",
             scanner->finding_count,
             scanner->files_scanned,
-            scanner->files_skipped);
+            scanner->files_skipped,
+            scanner->scan_failed ? "true" : "false");
     fprintf(out, ",\"findings\":[");
 
     const ScannerFindingNode *current = scanner->findings_head;
@@ -380,6 +390,7 @@ void scanner_destroy(ScannerContext *scanner) {
     scanner->highest_severity = SEVERITY_LOW;
     scanner->files_scanned = 0;
     scanner->files_skipped = 0;
+    scanner->scan_failed = false;
 }
 
 static void match_callback(const char *rule_name,
@@ -518,6 +529,7 @@ int scanner_scan_stdin(ScannerContext *scanner) {
         result = 0;
     } else {
         scanner->files_skipped++;
+        scanner->scan_failed = true;
     }
     return result;
 }

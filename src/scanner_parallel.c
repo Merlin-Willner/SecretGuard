@@ -73,7 +73,12 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
 
     size_t thread_count = resolve_thread_count(config->threads);
     if (thread_count <= 1) {
-        return walk_path(config, scan_file_callback, scanner);
+        int walk_result = walk_path(config, scan_file_callback, scanner);
+        if (walk_result != 0) {
+            scanner->scan_failed = true;
+            return -1;
+        }
+        return 0;
     }
 
     WorkerContext *workers = calloc(thread_count, sizeof(*workers));
@@ -81,6 +86,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
     if (!workers || !worker_contexts) {
         free(workers);
         free(worker_contexts);
+        scanner->scan_failed = true;
         return -1;
     }
 
@@ -98,6 +104,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
     if (!pool) {
         free(worker_contexts);
         free(workers);
+        scanner->scan_failed = true;
         return -1;
     }
 
@@ -115,6 +122,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
     free(workers);
 
     if (walk_result != 0) {
+        scanner->scan_failed = true;
         return -1;
     }
 

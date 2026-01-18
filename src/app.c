@@ -38,6 +38,12 @@ int app_run(int argc, char **argv) {
         fprintf(stderr, "ERROR: scanning failed.\n");
         exit_code = 1;
     }
+    if (exit_code != 0) {
+        scanner_destroy(&scanner);
+        rules_destroy(&rules);
+        free_config(&config);
+        return exit_code;
+    }
 
     FILE *out = stdout;
     if (config.output_path) {
