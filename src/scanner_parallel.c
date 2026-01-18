@@ -1,10 +1,10 @@
 #include "scanner_parallel.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "thread_pool.h"
+#include "util.h"
 #include "walk.h"
 
 #define DEFAULT_QUEUE_CAPACITY 256
@@ -12,18 +12,6 @@
 typedef struct {
     ScannerContext scanner;
 } WorkerContext;
-
-static char *duplicate_string(const char *text) {
-    if (!text) {
-        return NULL;
-    }
-    size_t length = strlen(text) + 1;
-    char *copy = malloc(length);
-    if (copy) {
-        memcpy(copy, text, length);
-    }
-    return copy;
-}
 
 static size_t get_cpu_count(void) {
     long count = sysconf(_SC_NPROCESSORS_ONLN);

@@ -23,6 +23,7 @@ runs the regex rules on each line, and stores findings for later reporting. */
 #include <unistd.h>
 
 #include "config.h"
+#include "util.h"
 
 #define SCAN_BUFFER_SIZE 8192
 
@@ -68,18 +69,6 @@ void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
     scanner->findings_tail = NULL;
     scanner->files_scanned = 0;
     scanner->files_skipped = 0;
-}
-
-static char *duplicate_string(const char *text) {
-    if (!text) {
-        return NULL;
-    }
-    size_t length = strlen(text) + 1;
-    char *copy = malloc(length);
-    if (copy) {
-        memcpy(copy, text, length);
-    }
-    return copy;
 }
 
 static int compare_findings(const ScannerFindingNode *a, const ScannerFindingNode *b) {
