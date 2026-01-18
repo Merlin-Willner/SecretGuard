@@ -103,7 +103,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
 
     int walk_result = walk_path(config, enqueue_path_callback, pool);
 
-    thread_pool_stop(pool);
+    thread_pool_wait(pool);
     thread_pool_destroy(pool);
 
     for (size_t i = 0; i < thread_count; ++i) {

@@ -16,6 +16,7 @@ ThreadPool *thread_pool_create(size_t thread_count,
                                void **worker_contexts);
 
 int thread_pool_submit(ThreadPool *pool, void *job);
+void thread_pool_wait(ThreadPool *pool);
 void thread_pool_stop(ThreadPool *pool);
 void thread_pool_destroy(ThreadPool *pool);
 

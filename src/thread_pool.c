@@ -22,8 +22,10 @@ struct ThreadPool {
     size_t queue_capacity;
     size_t queue_head;
     size_t queue_tail;
+    size_t pending_jobs;
 
     pthread_mutex_t mutex;
+    pthread_cond_t idle_cond;
     sem_t jobs_available;
     sem_t slots_available;
     bool shutdown;
@@ -56,6 +58,15 @@ static void *worker_main(void *arg) {
 
         pool->job_fn(job, worker_ctx, pool->shared_context);
         if (pool->cleanup_fn) pool->cleanup_fn(job);
+
+        pthread_mutex_lock(&pool->mutex);
+        if (pool->pending_jobs > 0) {
+            pool->pending_jobs--;
+            if (pool->pending_jobs == 0) {
+                pthread_cond_broadcast(&pool->idle_cond);
+            }
+        }
+        pthread_mutex_unlock(&pool->mutex);
     }
     return NULL;
 }
@@ -82,7 +93,8 @@ ThreadPool *thread_pool_create(size_t thread_count, size_t queue_capacity,
     if (!pool->threads || !pool->queue || !pool->worker_args) goto fail;
 
     if (pthread_mutex_init(&pool->mutex, NULL) != 0) goto fail;
-    if (sem_init(&pool->jobs_available, 0, 0) != 0) goto fail_mutex;
+    if (pthread_cond_init(&pool->idle_cond, NULL) != 0) goto fail_mutex;
+    if (sem_init(&pool->jobs_available, 0, 0) != 0) goto fail_cond;
     if (sem_init(&pool->slots_available, 0, (unsigned)queue_capacity) != 0) goto fail_sem1;
 
     for (size_t i = 0; i < thread_count; ++i) {
@@ -99,6 +111,7 @@ ThreadPool *thread_pool_create(size_t thread_count, size_t queue_capacity,
 
 fail_sem2: sem_destroy(&pool->slots_available);
 fail_sem1: sem_destroy(&pool->jobs_available);
+fail_cond: pthread_cond_destroy(&pool->idle_cond);
 fail_mutex: pthread_mutex_destroy(&pool->mutex);
 fail:
     free(pool->threads);
@@ -122,10 +135,21 @@ int thread_pool_submit(ThreadPool *pool, void *job) {
     }
     pool->queue[pool->queue_tail] = job;
     pool->queue_tail = (pool->queue_tail + 1) % pool->queue_capacity;
+    pool->pending_jobs++;
     pthread_mutex_unlock(&pool->mutex);
 
     sem_post(&pool->jobs_available);              /* Signalisiere: Job da */
     return 0;
+}
+
+void thread_pool_wait(ThreadPool *pool) {
+    if (!pool) return;
+
+    pthread_mutex_lock(&pool->mutex);
+    while (pool->pending_jobs > 0) {
+        pthread_cond_wait(&pool->idle_cond, &pool->mutex);
+    }
+    pthread_mutex_unlock(&pool->mutex);
 }
 
 /* Shutdown signalisieren */
@@ -146,6 +170,7 @@ void thread_pool_destroy(ThreadPool *pool) {
         pthread_join(pool->threads[i], NULL);
     sem_destroy(&pool->slots_available);
     sem_destroy(&pool->jobs_available);
+    pthread_cond_destroy(&pool->idle_cond);
     pthread_mutex_destroy(&pool->mutex);
     free(pool->threads);
     free(pool->queue);
