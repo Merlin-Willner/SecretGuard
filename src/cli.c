@@ -26,6 +26,9 @@ static int parse_int(const char *text, int *out_value) {
 // Parse CLI args into the config.
 // Returns: 0 = ok, 1 = help shown, 2 = error.
 int parse_arguments(int argc, char **argv, Config *config) {
+    if (!config) {
+        return 2;
+    }
     int i = 1;
     const char *prog = (argc > 0) ? argv[0] : "app";
 
@@ -36,7 +39,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
             print_help(prog);
             return 1;
         } else if (strncmp(arg, "--max-depth", 11) == 0) {
-            // Supports "--max-depth 3" and "--max-depth=3".
             const char *value = NULL;
             if (strcmp(arg, "--max-depth") == 0) {
                 if (i + 1 >= argc) {
@@ -55,12 +57,30 @@ int parse_arguments(int argc, char **argv, Config *config) {
                 fprintf(stderr, "ERROR: invalid --max-depth value: %s\n", value ? value : "(null)");
                 return 2;
             }
+        } else if (strncmp(arg, "--threads", 9) == 0) {
+            const char *value = NULL;
+            if (strcmp(arg, "--threads") == 0) {
+                if (i + 1 >= argc) {
+                    fprintf(stderr, "ERROR: --threads requires a value.\n");
+                    return 2;
+                }
+                value = argv[++i];
+            } else if (arg[9] == '=') {
+                value = arg + 10;
+            } else {
+                fprintf(stderr, "ERROR: invalid --threads usage: %s\n", arg);
+                return 2;
+            }
+
+            if (parse_int(value, &config->threads) != 0 || config->threads < 0) {
+                fprintf(stderr, "ERROR: invalid --threads value: %s\n", value ? value : "(null)");
+                return 2;
+            }
         } else if (strcmp(arg, "--stdin") == 0) {
             config->stdin_mode = true;
         } else if (strcmp(arg, "--json") == 0) {
             config->json_output = true;
         } else if (strncmp(arg, "--out", 5) == 0) {
-            // Supports "--out file" and "--out=file".
             const char *value = NULL;
             if (strcmp(arg, "--out") == 0) {
                 if (i + 1 >= argc) {
@@ -92,7 +112,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
             fprintf(stderr, "ERROR: unknown flag. Use --help to see valid options.\n");
             return 2;
         } else {
-            // Only one path is allowed.
             if (!config->root_path) {
                 config->root_path = duplicate_string(arg);
                 if (!config->root_path) {
@@ -113,7 +132,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
         return 2;
     }
 
-    // Default to current directory when no path or stdin is provided.
     if (!config->root_path && !config->stdin_mode) {
         config->root_path = duplicate_string(".");
         if (!config->root_path) {
@@ -147,8 +165,15 @@ void print_config(const Config *config) {
     if (config->stdin_mode) {
         printf("%s v%s  \u2022  mode: %s\n", APP_NAME, APP_VERSION, mode_label);
     } else {
+        char threads_label[32];
+        if (config->threads <= 0) {
+            snprintf(threads_label, sizeof(threads_label), "auto");
+        } else {
+            snprintf(threads_label, sizeof(threads_label), "%d", config->threads);
+        }
         printf("%s v%s  \u2022  mode: %s \u2022  depth: %s\n",
                APP_NAME, APP_VERSION, mode_label, depth_label);
+        printf("Threads: %s\n", threads_label);
     }
     printf("Target:  %s\n", target_label);
     if (config->output_path) {
@@ -163,6 +188,7 @@ void print_help(const char *program_name) {
     printf("Options:\n");
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
+    printf("      --threads N    Number of worker threads (default: 0 for auto)\n");
     printf("      --stdin        Read from STDIN instead of a file path\n");
     printf("      --json         Output results as JSON\n");
     printf("      --out FILE     Write results to FILE instead of stdout\n");

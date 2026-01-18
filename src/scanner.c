@@ -14,18 +14,16 @@ runs the regex rules on each line, and stores findings for later reporting. */
  */
 
 #include "scanner.h"
-#include "util.h"
 #include <errno.h>
-#include <fcntl.h>   /* POSIX open for file descriptors */
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>  /* POSIX read/close for streaming file data */
+#include <unistd.h>
 
 #include "config.h"
 
-/* Buffer size for reading files or lines */
 #define SCAN_BUFFER_SIZE 8192
 
 typedef struct ScannerFindingNode {
@@ -37,15 +35,12 @@ typedef struct ScannerFindingNode {
     struct ScannerFindingNode *next;
 } ScannerFindingNode;
 
-/* Structure to hold context information for a single line,
-   passed to the callback function */
 typedef struct {
     ScannerContext *scanner;
     const char *path;
     size_t line_number;
 } LineContext;
 
-/* Check whether a buffer looks like binary data. */
 bool is_binary_buffer(const unsigned char *buffer, size_t length) {
     if (!buffer || length == 0) {
         return false;
@@ -65,16 +60,26 @@ bool is_binary_buffer(const unsigned char *buffer, size_t length) {
     return (double)non_printable / (double)length > 0.3;
 }
 
-/* Initialize the scanner with a rules engine, which defines
-   patterns that indicate "sensitive information". */
 void scanner_init(ScannerContext *scanner, RulesEngine *rules) {
     scanner->rules = rules;
-    scanner->finding_count = 0; /* Reset number of findings */
+    scanner->finding_count = 0;
     scanner->highest_severity = SEVERITY_LOW;
     scanner->findings_head = NULL;
     scanner->findings_tail = NULL;
     scanner->files_scanned = 0;
     scanner->files_skipped = 0;
+}
+
+static char *duplicate_string(const char *text) {
+    if (!text) {
+        return NULL;
+    }
+    size_t length = strlen(text) + 1;
+    char *copy = malloc(length);
+    if (copy) {
+        memcpy(copy, text, length);
+    }
+    return copy;
 }
 
 static int compare_findings(const ScannerFindingNode *a, const ScannerFindingNode *b) {
@@ -158,6 +163,25 @@ static int append_finding(ScannerContext *scanner,
     return 0;
 }
 
+void scanner_merge(ScannerContext *dest, ScannerContext *src) {
+    if (!dest || !src) {
+        return;
+    }
+
+    ScannerFindingNode *current = src->findings_head;
+    while (current) {
+        append_finding(dest,
+                       current->rule_name,
+                       current->severity,
+                       current->path,
+                       current->line_number,
+                       current->column);
+        current = current->next;
+    }
+
+    dest->files_scanned += src->files_scanned;
+    dest->files_skipped += src->files_skipped;
+}
 
 static const char *severity_label(severity_t severity) {
     switch (severity) {
@@ -227,7 +251,6 @@ static void json_write_string(FILE *out, const char *text) {
     fputc('"', out);
 }
 
-/* Print a single finding to a stream */
 static void print_finding(const char *rule_name,
                           severity_t severity,
                           const char *path,
@@ -292,13 +315,13 @@ void scanner_print_report(const ScannerContext *scanner, FILE *out) {
             current = current->next;
         }
         fprintf(out, "Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
-        status_color,
-        status_icon,
-        status,
-        status_reset,
-        scanner->finding_count,
-        scanner->files_scanned,
-        scanner->files_skipped);
+                status_color,
+                status_icon,
+                status,
+                status_reset,
+                scanner->finding_count,
+                scanner->files_scanned,
+                scanner->files_skipped);
     }
 }
 
@@ -370,7 +393,6 @@ void scanner_destroy(ScannerContext *scanner) {
     scanner->files_skipped = 0;
 }
 
-/* Callback function called by the rules engine when a match is found */
 static void match_callback(const char *rule_name,
                            severity_t severity,
                            size_t start,
@@ -389,7 +411,6 @@ static void match_callback(const char *rule_name,
     }
 }
 
-/* Scan a single line for sensitive information */
 static void scan_line(ScannerContext *scanner,
                       const char *path,
                       const char *line,
@@ -400,11 +421,9 @@ static void scan_line(ScannerContext *scanner,
     line_context.path = path;
     line_context.line_number = line_number;
 
-    /* Execute the rules engine on this line */
     rules_scan_line(scanner->rules, line, length, match_callback, &line_context);
 }
 
-/* Scan an open file descriptor for secrets. */
 static int scan_file_descriptor(ScannerContext *scanner,
                                 const char *path,
                                 int file_descriptor) {
@@ -442,7 +461,6 @@ static int scan_file_descriptor(ScannerContext *scanner,
                 line_capacity = new_capacity;
             }
 
-            /* Detect end of line */
             if (current == '\n') {
                 if (line_length > 0 && line_buffer[line_length - 1] == '\r') {
                     line_length--;
@@ -463,7 +481,6 @@ static int scan_file_descriptor(ScannerContext *scanner,
         result = -1;
     }
 
-    /* Check the last line if the file doesn't end with \n */
     if (line_length > 0) {
         line_buffer[line_length] = '\0';
         scan_line(scanner, path, line_buffer, line_length, line_number);
@@ -474,10 +491,10 @@ cleanup:
     return result;
 }
 
-
-/* Scan a file path for secret patterns. */
 int scanner_scan_path(ScannerContext *scanner, const char *path) {
-    if (!scanner || !path) return -1;
+    if (!scanner || !path) {
+        return -1;
+    }
 
     int file_descriptor = open(path, O_RDONLY);
     if (file_descriptor < 0) {
@@ -499,9 +516,10 @@ int scanner_scan_path(ScannerContext *scanner, const char *path) {
     return result;
 }
 
-/* Scan standard input for secret patterns. */
 int scanner_scan_stdin(ScannerContext *scanner) {
-    if (!scanner) return -1;
+    if (!scanner) {
+        return -1;
+    }
 
     int result = scan_file_descriptor(scanner, DEFAULT_STDIN_LABEL, STDIN_FILENO);
     if (result == 0) {
