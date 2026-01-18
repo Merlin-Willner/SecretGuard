@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "app.h"
 
 #include "cli.h"
 #include "rules.h"
