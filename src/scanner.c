@@ -1,18 +1,3 @@
-
-
-/* Reads every file or standard in stdin line by line
-runs the regex rules on each line, and stores findings for later reporting. */
-
-
-
-/* After that the code should work for APIs and Passwords.#
- The next step would be:
- 1. Expand for more regex rules
- to detect more critical security flaws
- 2. Implement multi threading for performance gains
-
- */
-
 #include "scanner.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -42,6 +27,7 @@ typedef struct {
     size_t line_number;
 } LineContext;
 
+// Heuristic to skip binary files.
 bool is_binary_buffer(const unsigned char *buffer, size_t length) {
     if (!buffer || length == 0) {
         return false;
@@ -125,6 +111,7 @@ static int append_finding(ScannerContext *scanner,
         scanner->findings_head = node;
         scanner->findings_tail = node;
     } else {
+        // Insert in sorted order to keep report stable.
         ScannerFindingNode *prev = NULL;
         ScannerFindingNode *current = scanner->findings_head;
         while (current && compare_findings(current, node) <= 0) {
@@ -424,6 +411,7 @@ static void scan_line(ScannerContext *scanner,
     rules_scan_line(scanner->rules, line, length, match_callback, &line_context);
 }
 
+// Read the file in chunks and split into lines across buffer boundaries.
 static int scan_file_descriptor(ScannerContext *scanner,
                                 const char *path,
                                 int file_descriptor) {

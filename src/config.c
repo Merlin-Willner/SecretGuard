@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 
-// Set default values.
 void init_config(Config *config) {
     if (!config) {
         return;
@@ -15,7 +14,6 @@ void init_config(Config *config) {
     config->output_path = NULL;
 }
 
-// Free memory owned by the config.
 void free_config(Config *config) {
     if (!config) {
         return;

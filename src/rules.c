@@ -144,6 +144,7 @@ void rules_scan_line(const RulesEngine *engine,
         const RegexRule *rule = &rules_impl->rules[i];
         size_t offset = 0;
 
+        // Scan the same line for multiple matches.
         while (offset <= length) {
             regmatch_t match;
             int result = regexec(&rule->regex, line + offset, 1, &match, 0);
@@ -154,6 +155,7 @@ void rules_scan_line(const RulesEngine *engine,
             size_t start = offset + (size_t)match.rm_so;
             size_t end = offset + (size_t)match.rm_eo;
             if (end <= start) {
+                // Avoid getting stuck on empty matches.
                 offset++;
                 continue;
             }

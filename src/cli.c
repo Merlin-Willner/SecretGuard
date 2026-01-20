@@ -6,7 +6,6 @@
 
 #include "util.h"
 
-// Parse a full integer (no extra characters).
 static int parse_int(const char *text, int *out_value) {
     if (!text || !out_value) {
         return -1;
@@ -23,8 +22,6 @@ static int parse_int(const char *text, int *out_value) {
     return 0;
 }
 
-// Parse CLI args into the config.
-// Returns: 0 = ok, 1 = help shown, 2 = error.
 int parse_arguments(int argc, char **argv, Config *config) {
     if (!config) {
         return 2;
@@ -143,7 +140,6 @@ int parse_arguments(int argc, char **argv, Config *config) {
     return 0;
 }
 
-// Print the final config.
 void print_config(const Config *config) {
     if (config->json_output) {
         return;
@@ -181,7 +177,6 @@ void print_config(const Config *config) {
     }
 }
 
-// Show usage info.
 void print_help(const char *program_name) {
     printf("%s %s\n", APP_NAME, APP_VERSION);
     printf("Usage: %s [OPTIONS] <path>\n", program_name);

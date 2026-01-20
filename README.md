@@ -45,17 +45,17 @@ Options:
 
 Note: Provide either a path or --stdin.
 
-## Anforderungen (Abschnitt 4) - Umsetzung
+## Requirements (Section 4) - Implementation
 
-1. C, mehrere Dateien, Header: `src/` und `include/` (z.B. `src/app.c`, `include/app.h`).
-2. Begrenzter Linux-Command: SecretGuard ist ein "grep -R / find"-aehnlicher Scanner fuer Secrets in Dateien (`src/walk.c`, `src/scanner.c`).
-3. Dateisystem + argc/argv + Linux File API: CLI-Parsing in `src/cli.c`, Datei-IO via `open/read` in `src/scanner.c`, Ausgabe via stdout/Datei in `src/app.c`.
-4. Dynamische Datenstrukturen: Linked List fuer Findings in `src/scanner.c`; Job-Queue im Thread-Pool in `src/thread_pool.c`.
-5. stdin/stdout: `--stdin` nutzt `scanner_scan_stdin` in `src/scanner.c`, Ausgabe standardmaessig auf stdout in `src/app.c`.
-6. Threads fuer Parallelitaet: Parallel-Scanner in `src/scanner_parallel.c` mit `src/thread_pool.c`.
-7. Synchronisation: Mutex/Cond/Semaphoren im Thread-Pool (`src/thread_pool.c`).
-8. Build mit gcc + Makefile Targets: `Makefile` enthaelt `all`, `clean`, `test`, `run`.
-9. Git-Commits + AI-Nutzung: Commit-Historie im Repo (`git log`); AI-Nutzung dokumentiert im Abschnitt "AI Usage".
+1. Language/structure: C code split into multiple modules with headers and sources (`src/`, `include/`; e.g., `src/app.c`, `include/app.h`).
+2. Limited Linux command: SecretGuard is a simplified `grep -R`/`find` for secrets; recursive walk and line scanning (`src/walk.c`, `src/scanner.c`).
+3. Filesystem + argc/argv + Linux File API: argument parsing via `parse_arguments` (`src/cli.c`); file access via `open/read` (`src/scanner.c`); output to stdout or file (`src/app.c`).
+4. Dynamic data structures: findings stored as a linked list (`src/scanner.c`); job queue in the thread pool (`src/thread_pool.c`).
+5. stdin/stdout: `--stdin` uses `scanner_scan_stdin` (`src/scanner.c`); default output goes to stdout (`src/app.c`).
+6. Threads for parallelism: parallel scan via `scanner_scan_parallel` + thread pool (`src/scanner_parallel.c`, `src/thread_pool.c`).
+7. Synchronization: mutex/condition/semaphores protect queue and shutdown in the thread pool (`src/thread_pool.c`).
+8. Build with gcc + Makefile targets: `Makefile` provides `all`, `clean`, `test`, `run` (gcc as compiler).
+9. Git commits + AI usage: commit history in the repo (`git log`); AI usage documented under "AI Usage".
 
 ## Git Hook
 
@@ -67,7 +67,7 @@ To enable the optional pre-commit hook:
 
 The hook runs `secretguard` on staged files and blocks commits if findings are detected.
 
-TestSecret: Password = JamesBond007
+TestSecret:
 
 ## AI Usage
 
