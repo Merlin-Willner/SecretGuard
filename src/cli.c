@@ -178,14 +178,22 @@ void print_config(const Config *config) {
 }
 
 void print_help(const char *program_name) {
-    printf("%s %s\n", APP_NAME, APP_VERSION);
+    printf("%s %s (Linux/WSL)\n", APP_NAME, APP_VERSION);
     printf("Usage: %s [OPTIONS] <path>\n", program_name);
     printf("Options:\n");
     printf("  -h, --help         Show this help text\n");
     printf("      --max-depth N  Limit how deep we recurse (default: -1 for unlimited)\n");
+    printf("                     Example: %s --max-depth 3 path/to/scan\n", program_name);
     printf("      --threads N    Number of worker threads (default: 0 for auto)\n");
+    printf("                     Example: %s --threads 4 path/to/scan\n", program_name);
     printf("      --stdin        Read from STDIN instead of a file path\n");
+    printf("                     Example:\n");
+    printf("                       %s --stdin <<'EOF'\n", program_name);
+    printf("                       paste the text to check for security risks\n");
+    printf("                       EOF\n");
     printf("      --json         Output results as JSON\n");
+    printf("                     Example: %s --json path/to/scan\n", program_name);
     printf("      --out FILE     Write results to FILE instead of stdout\n");
-    printf("\nNote: Provide either a path or --stdin.\n");
+    printf("                     Example: %s --out report.txt path/to/scan\n", program_name);
+    printf("\nNote: Provide a path (default: current directory) or use --stdin.\n");
 }

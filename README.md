@@ -26,13 +26,13 @@ You must give a path OR use --stdin.
 
 Examples:
 
-  ./secretguard --max-depth 3 /path/to/scan
+  ./secretguard --max-depth 3 path/to/scan
   ./secretguard --stdin
   ./secretguard --help
 
 ## Help
 
-SecretGuard 0.1.0
+SecretGuard 0.1.0 (Linux/WSL)
 Usage: ./secretguard [OPTIONS] <path>
 Options:
 
@@ -40,10 +40,14 @@ Options:
       --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
       --threads N    Number of worker threads (default: 0 for auto)
       --stdin        Read from STDIN instead of a file path
+                     Example:
+                      ./secretguard --stdin <<'EOF'
+                      paste the text to check for security risks
+                      EOF
       --json         Output results as JSON
       --out FILE     Write results to FILE instead of stdout
 
-Note: Provide either a path or --stdin.
+Note: Provide a path (default: current directory) or use --stdin.
 
 ## Requirements (Section 4) - Implementation
 
