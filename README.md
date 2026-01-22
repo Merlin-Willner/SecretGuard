@@ -9,7 +9,7 @@ Targets:
 - `make` & `make all`
   Builds the `secretguard` binary (default target).
 - `make run`
-  Runs the application with path `examples/demo_repo`.
+  Runs the application with the current path.
 - `make clean`
   Removes `build/` and the `secretguard` binary.
 
