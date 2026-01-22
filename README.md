@@ -22,20 +22,15 @@ Run the unit tests with:
 
 ## Run
 
-You must give a path OR use --stdin.
-
-Examples:
-
-  ./secretguard --max-depth 3 path/to/scan
-  ./secretguard --stdin
-  ./secretguard --help
-
-## Help
-
 SecretGuard 0.1.0 (Linux/WSL)
-Usage: ./secretguard [OPTIONS] <path>
+
+Use either `make run` to build and run (with the default path and options) or build with `make` and run with more specific options and paths:
+
+Usage: ./secretguard [OPTIONS] path
+
 Options:
-  -h, --help         Show this help text
+
+      -h, --help     Show this help text
       --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
                      Example: ./secretguard --max-depth 3 path/to/scan
       --threads N    Number of worker threads (default: 0 for auto)
