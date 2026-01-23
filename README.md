@@ -6,10 +6,10 @@ You need a C compiler (gcc).
 
 Targets:
 
-- `make`
+- `make` & `make all`
   Builds the `secretguard` binary (default target).
 - `make run`
-  Runs the application with path `examples/demo_repo`.
+  Runs the application with the current path.
 - `make clean`
   Removes `build/` and the `secretguard` binary.
 
@@ -22,28 +22,30 @@ Run the unit tests with:
 
 ## Run
 
-You must give a path OR use --stdin.
+SecretGuard 0.1.0 (Linux/WSL)
 
-Examples:
+Use either `make run` to build and run (with the default path and options) or build with `make` and run with more specific options and paths:
 
-  ./secretguard --max-depth 3 /path/to/scan
-  ./secretguard --stdin
-  ./secretguard --help
+Usage: ./secretguard [OPTIONS] path
 
-## Help
-
-SecretGuard 0.1.0
-Usage: ./secretguard [OPTIONS] <path>
 Options:
 
       -h, --help     Show this help text
       --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
+                     Example: ./secretguard --max-depth 3 path/to/scan
       --threads N    Number of worker threads (default: 0 for auto)
+                     Example: ./secretguard --threads 4 path/to/scan
       --stdin        Read from STDIN instead of a file path
+                     Example:
+                       ./secretguard --stdin <<'EOF'
+                       paste the text to check for security risks
+                       EOF
       --json         Output results as JSON
+                     Example: ./secretguard --json path/to/scan
       --out FILE     Write results to FILE instead of stdout
+                     Example: ./secretguard --out report.txt path/to/scan
 
-Note: Provide either a path or --stdin.
+Note: Provide a path (default: current directory) or use --stdin.
 
 ## Requirements (Section 4) - Implementation
 
@@ -55,7 +57,7 @@ Note: Provide either a path or --stdin.
 6. Threads for parallelism: parallel scan via `scanner_scan_parallel` + thread pool (`src/scanner_parallel.c`, `src/thread_pool.c`).
 7. Synchronization: mutex/condition/semaphores protect queue and shutdown in the thread pool (`src/thread_pool.c`).
 8. Build with gcc + Makefile targets: `Makefile` provides `all`, `clean`, `test`, `run` (gcc as compiler).
-9. Git commits + AI usage: commit history in the repo (`git log`); AI usage documented under "AI Usage".
+9. AI usage documented under "AI Usage".
 
 ## Git Hook
 
@@ -67,7 +69,7 @@ To enable the optional pre-commit hook:
 
 The hook runs `secretguard` on staged files and blocks commits if findings are detected.
 
-TestSecret:
+TestSecret: 
 
 ## AI Usage
 

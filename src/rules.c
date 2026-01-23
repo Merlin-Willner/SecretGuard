@@ -22,7 +22,7 @@ typedef struct {
 } RulesImpl;
 
 static const RegexRule DEFAULT_RULES[] = {
-    {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])password[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
+    {"GENERIC_PASSWORD_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])(password|passwort)[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_APIKEY_KV", SEVERITY_MEDIUM, "(^|[^[:alnum:]_-])api[_-]?key[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_SECRET_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])secret[[:space:]]*[:=][[:space:]]*[^[:space:]]{8,}", REG_ICASE | REG_EXTENDED, {0}, false},
     {"GENERIC_TOKEN_KV", SEVERITY_HIGH, "(^|[^[:alnum:]_-])(access|refresh|id)?_?token[[:space:]]*[:=][[:space:]]*[^[:space:]]+", REG_ICASE | REG_EXTENDED, {0}, false},
