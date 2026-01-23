@@ -10,6 +10,7 @@
 #define DEFAULT_QUEUE_CAPACITY 256
 
 typedef struct {
+    // Each worker keeps its own scanner to avoid shared-state locks.
     ScannerContext scanner;
 } WorkerContext;
 
@@ -41,6 +42,7 @@ static void free_job(void *job) {
 
 static int enqueue_path_callback(const char *path, void *user_data) {
     ThreadPool *pool = (ThreadPool *)user_data;
+    // Copy the path so it stays valid after the walk continues.
     char *copy = duplicate_string(path);
     if (!copy) {
         return -1;
@@ -73,6 +75,7 @@ int scanner_scan_parallel(const Config *config, RulesEngine *rules, ScannerConte
 
     size_t thread_count = resolve_thread_count(config->threads);
     if (thread_count <= 1) {
+        // Single-threaded path for low thread counts.
         int walk_result = walk_path(config, scan_file_callback, scanner);
         if (walk_result != 0) {
             scanner->scan_failed = true;

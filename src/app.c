@@ -24,7 +24,6 @@ int app_run(int argc, char **argv) {
 
     print_config(&config);
 
-    /* Initialize rules engine and scanner. */
     RulesEngine rules;
     if (rules_init(&rules) != 0) {
         fprintf(stderr, "ERROR: failed to initialize rules engine.\n");

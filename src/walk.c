@@ -1,18 +1,13 @@
-
-/* The code in this file should walk through a root path,
-go to subfolders to the maxdepth and call a callback for every file it finds  */
-
 #include "walk.h"
 
-#include <dirent.h>  /* POSIX directory traversal (opendir/readdir). */
+#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h> /* POSIX stat/lstat for file metadata. */
+#include <sys/stat.h>
 #include <unistd.h>
 
-/* Join a parent directory and child name into a new path string. */
 static char *join_path(const char *parent, const char *child) {
     size_t parent_length = strlen(parent);
     size_t child_length = strlen(child);
@@ -34,7 +29,7 @@ static char *join_path(const char *parent, const char *child) {
     return result;
 }
 
-/* Recursively walk a path and call a callback for each regular file. */
+// Walk directories recursively, skipping symlinks and obeying max depth.
 static int walk_recursive(const Config *config,
                           const char *path,
                           int depth,
@@ -95,8 +90,7 @@ static int walk_recursive(const Config *config,
 
     return on_file(path, user_data);
 }
-
-/* Walk the root path and scan each file via callback. */
+// Walk the root path and scan each file via callback.
 int walk_path(const Config *config, file_visit_callback on_file, void *user_data) {
     if (!config || !config->root_path) {
         return 0;

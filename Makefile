@@ -28,7 +28,7 @@ build/%.o: src/%.c | build_dir
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(APP)
-	./$(APP) examples/demo_repo
+	./$(APP) 
 
 test: $(TEST_BIN)
 	./$(TEST_BIN)

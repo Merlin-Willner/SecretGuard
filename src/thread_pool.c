@@ -1,4 +1,4 @@
-/* Thread-Pool mit Semaphoren (Producer-Consumer Pattern) */
+// Simple thread pool with a bounded queue.
 
 #include "thread_pool.h"
 #include <pthread.h>
@@ -6,13 +6,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-/* Hilfstruktur für Worker-Index */
 typedef struct {
     struct ThreadPool *pool;
     size_t index;
 } WorkerArgs;
 
-/* Thread-Pool Struktur */
 struct ThreadPool {
     pthread_t *threads;
     size_t thread_count;
@@ -22,6 +20,7 @@ struct ThreadPool {
     size_t queue_capacity;
     size_t queue_head;
     size_t queue_tail;
+    // Number of queued or running jobs.
     size_t pending_jobs;
 
     pthread_mutex_t mutex;
@@ -36,14 +35,14 @@ struct ThreadPool {
     void **worker_contexts;
 };
 
-/* Worker-Thread: Holt und verarbeitet Jobs */
+// Worker loop: wait for jobs and process them.
 static void *worker_main(void *arg) {
     WorkerArgs *args = (WorkerArgs *)arg;
     ThreadPool *pool = args->pool;
     void *worker_ctx = pool->worker_contexts ? pool->worker_contexts[args->index] : NULL;
 
     while (true) {
-        sem_wait(&pool->jobs_available);          /* Warte auf Job */
+        sem_wait(&pool->jobs_available);
 
         pthread_mutex_lock(&pool->mutex);
         if (pool->shutdown) {
@@ -54,7 +53,7 @@ static void *worker_main(void *arg) {
         pool->queue_head = (pool->queue_head + 1) % pool->queue_capacity;
         pthread_mutex_unlock(&pool->mutex);
 
-        sem_post(&pool->slots_available);         /* Slot freigeben */
+        sem_post(&pool->slots_available);
 
         pool->job_fn(job, worker_ctx, pool->shared_context);
         if (pool->cleanup_fn) pool->cleanup_fn(job);
@@ -71,7 +70,6 @@ static void *worker_main(void *arg) {
     return NULL;
 }
 
-/* Pool erstellen und Threads starten */
 ThreadPool *thread_pool_create(size_t thread_count, size_t queue_capacity,
                                thread_job_fn job_fn, thread_job_cleanup_fn cleanup_fn,
                                void *shared_context, void **worker_contexts) {
@@ -121,11 +119,10 @@ fail:
     return NULL;
 }
 
-/* Job in Queue einfügen */
 int thread_pool_submit(ThreadPool *pool, void *job) {
     if (!pool || !job) return -1;
 
-    sem_wait(&pool->slots_available);             /* Warte auf freien Slot */
+    sem_wait(&pool->slots_available);
 
     pthread_mutex_lock(&pool->mutex);
     if (pool->shutdown) {
@@ -138,7 +135,7 @@ int thread_pool_submit(ThreadPool *pool, void *job) {
     pool->pending_jobs++;
     pthread_mutex_unlock(&pool->mutex);
 
-    sem_post(&pool->jobs_available);              /* Signalisiere: Job da */
+    sem_post(&pool->jobs_available);
     return 0;
 }
 
@@ -152,17 +149,15 @@ void thread_pool_wait(ThreadPool *pool) {
     pthread_mutex_unlock(&pool->mutex);
 }
 
-/* Shutdown signalisieren */
 void thread_pool_stop(ThreadPool *pool) {
     if (!pool) return;
     pthread_mutex_lock(&pool->mutex);
     pool->shutdown = true;
     pthread_mutex_unlock(&pool->mutex);
     for (size_t i = 0; i < pool->thread_count; ++i)
-        sem_post(&pool->jobs_available);          /* Alle Threads aufwecken */
+        sem_post(&pool->jobs_available);
 }
 
-/* Pool zerstören und Ressourcen freigeben */
 void thread_pool_destroy(ThreadPool *pool) {
     if (!pool) return;
     thread_pool_stop(pool);

@@ -13,6 +13,13 @@ Targets:
 - `make clean`
   Removes `build/` and the `secretguard` binary.
 
+## Tests
+
+Run the unit tests with:
+
+- `make test`
+  Builds and runs `build/test_all` (Unity tests in `tests/`).
+
 ## Run
 
 You must give a path OR use --stdin.
@@ -28,7 +35,8 @@ Examples:
 SecretGuard 0.1.0
 Usage: ./secretguard [OPTIONS] <path>
 Options:
-  -h, --help         Show this help text
+
+      -h, --help     Show this help text
       --max-depth N  Limit how deep we recurse (default: -1 for unlimited)
       --threads N    Number of worker threads (default: 0 for auto)
       --stdin        Read from STDIN instead of a file path
@@ -37,14 +45,29 @@ Options:
 
 Note: Provide either a path or --stdin.
 
+## Requirements (Section 4) - Implementation
+
+1. Language/structure: C code split into multiple modules with headers and sources (`src/`, `include/`; e.g., `src/app.c`, `include/app.h`).
+2. Limited Linux command: SecretGuard is a simplified `grep -R`/`find` for secrets; recursive walk and line scanning (`src/walk.c`, `src/scanner.c`).
+3. Filesystem + argc/argv + Linux File API: argument parsing via `parse_arguments` (`src/cli.c`); file access via `open/read` (`src/scanner.c`); output to stdout or file (`src/app.c`).
+4. Dynamic data structures: findings stored as a linked list (`src/scanner.c`); job queue in the thread pool (`src/thread_pool.c`).
+5. stdin/stdout: `--stdin` uses `scanner_scan_stdin` (`src/scanner.c`); default output goes to stdout (`src/app.c`).
+6. Threads for parallelism: parallel scan via `scanner_scan_parallel` + thread pool (`src/scanner_parallel.c`, `src/thread_pool.c`).
+7. Synchronization: mutex/condition/semaphores protect queue and shutdown in the thread pool (`src/thread_pool.c`).
+8. Build with gcc + Makefile targets: `Makefile` provides `all`, `clean`, `test`, `run` (gcc as compiler).
+9. Git commits + AI usage: commit history in the repo (`git log`); AI usage documented under "AI Usage".
+
 ## Git Hook
 
 To enable the optional pre-commit hook:
 
   git config core.hooksPath .githooks
+
   chmod +x .githooks/pre-commit
 
 The hook runs `secretguard` on staged files and blocks commits if findings are detected.
+
+TestSecret:
 
 ## AI Usage
 
