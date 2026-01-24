@@ -273,14 +273,16 @@ void scanner_print_report(const ScannerContext *scanner, FILE *out) {
         }
     }
 
-    fprintf(out, "Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
-            status_color,
-            status_icon,
-            status,
-            status_reset,
-            scanner->finding_count,
-            scanner->files_scanned,
-            scanner->files_skipped);
+    if (scanner->finding_count == 0) {
+        fprintf(out, "Summary: %s%s %s%s - %zu findings | files: %zu scanned, %zu skipped\n",
+                status_color,
+                status_icon,
+                status,
+                status_reset,
+                scanner->finding_count,
+                scanner->files_scanned,
+                scanner->files_skipped);
+    }
     fprintf(out, "Results:");
     if (scanner->finding_count == 0) {
         fprintf(out, " (no findings)\n");
